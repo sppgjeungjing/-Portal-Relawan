@@ -1,0 +1,174 @@
+// ============================================================
+// SPPG JEUNGJING — APP SHELL (perilaku navigasi bersama)
+// Dipakai oleh seluruh halaman Portal Relawan & Dashboard Admin.
+// Tidak bergantung pada logic modul manapun (Absensi, dst.) —
+// murni mengurus sidebar/drawer/topbar supaya tidak ditulis
+// ulang di setiap halaman.
+// ============================================================
+
+/**
+ * Inisialisasi perilaku shell: buka/tutup drawer (mobile), toggle
+ * collapse sidebar (laptop/desktop), dan menandai menu aktif.
+ * @param {object} [opts]
+ * @param {string} [opts.storageKey] kunci localStorage untuk status collapse (beda per role)
+ */
+function initShell(opts) {
+  const options = opts || {};
+  const storageKey = options.storageKey || 'sppgSidebarCollapsed';
+
+  const sidebar = document.querySelector('.shell-sidebar');
+  const overlay = document.querySelector('.shell-overlay');
+  const burger = document.querySelector('.shell-topbar-burger');
+  const closeBtn = document.querySelector('.shell-sidebar-close');
+  const collapseBtn = document.querySelector('.shell-sidebar-collapse-toggle');
+
+  function openDrawer() {
+    if (!sidebar) return;
+    sidebar.classList.add('is-open');
+    if (overlay) overlay.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer() {
+    if (!sidebar) return;
+    sidebar.classList.remove('is-open');
+    if (overlay) overlay.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  if (burger) burger.addEventListener('click', openDrawer);
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+  if (overlay) overlay.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+
+  // Menutup drawer otomatis saat sebuah link menu diklik (khusus mobile),
+  // supaya pengguna tidak perlu menutup manual setiap pindah halaman.
+  if (sidebar) {
+    sidebar.querySelectorAll('a.shell-nav-link').forEach((link) => {
+      link.addEventListener('click', () => { if (window.innerWidth < 1080) closeDrawer(); });
+    });
+  }
+
+  // Collapse sidebar (icon-only) — hanya berpengaruh di layar laptop/desktop via CSS.
+  if (collapseBtn && sidebar) {
+    const savedCollapsed = localStorage.getItem(storageKey) === '1';
+    if (savedCollapsed) sidebar.classList.add('is-collapsed');
+    collapseBtn.addEventListener('click', () => {
+      const nowCollapsed = sidebar.classList.toggle('is-collapsed');
+      localStorage.setItem(storageKey, nowCollapsed ? '1' : '0');
+    });
+  }
+}
+
+/** Set inisial 1-2 huruf dari nama, dipakai untuk avatar bulat. */
+function initialsFromName(nama) {
+  if (!nama) return '?';
+  const parts = String(nama).trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/** Format ISO datetime -> "12 Agustus 2026, 08:30" (dipakai beberapa modul). */
+function formatTanggalWaktuIndoShell(isoString) {
+  if (!isoString) return '—';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return '—';
+  const namaBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const p2 = n => String(n).padStart(2, '0');
+  return `${d.getDate()} ${namaBulan[d.getMonth()]} ${d.getFullYear()}, ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+}
+
+/** "dd/MM/yyyy" -> Date, dipakai untuk mengurutkan aktivitas terbaru. */
+function parseTanggalDMYShell(str) {
+  if (!str) return null;
+  const parts = String(str).split('/');
+  if (parts.length !== 3) return null;
+  const [dd, mm, yyyy] = parts.map(Number);
+  return new Date(yyyy, mm - 1, dd);
+}
+
+/**
+ * Boot standar untuk seluruh halaman Portal Relawan (selain login.html/index.html):
+ * - Menjamin ada sesi aktif (kalau tidak, lempar ke login.html).
+ * - Mengisi nama/status akun di topbar & sidebar dengan DATA AKTUAL (bukan hard-code).
+ * - Menghitung badge notifikasi dari Informasi + Jadwal yang belum "dibaca" (lokal per perangkat).
+ * - Memasang tombol Keluar di sidebar.
+ * Dipanggil sekali di setiap halaman shell, terpisah dari logic modul masing-masing
+ * (profil.js, riwayat.js, dst.) supaya modul-modul itu tidak perlu diubah.
+ */
+async function bootRelawanShell() {
+  const sesi = (typeof ambilSesiRelawan === 'function') ? ambilSesiRelawan() : null;
+  if (!sesi || !sesi.token) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  initShell({ storageKey: 'sppgSidebarCollapsedRelawan' });
+
+  const btnLogout = document.getElementById('btnLogoutShell');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', async () => {
+      try { await apiPost('logoutRelawan', { token: sesi.token }); } catch (e) { /* tetap keluar walau offline */ }
+      hapusSesiRelawan();
+      window.location.href = 'index.html';
+    });
+  }
+
+  try {
+    const profil = await apiGet('getProfilRelawan', { token: sesi.token });
+    const inisial = initialsFromName(profil.nama);
+    const isAktif = (profil.status || 'Aktif').toLowerCase().indexOf('nonaktif') === -1;
+
+    document.querySelectorAll('#topbarAvatar, #sidebarAvatar, #profilAvatar').forEach(el => { el.textContent = inisial; });
+    const namaEl = document.getElementById('sidebarNama');
+    if (namaEl) namaEl.textContent = profil.nama;
+    const statusEl = document.getElementById('sidebarStatus');
+    if (statusEl) {
+      statusEl.classList.add(isAktif ? 'aktif' : 'nonaktif');
+      statusEl.textContent = isAktif ? 'Akun Aktif' : 'Akun Tidak Aktif';
+    }
+
+    // Badge notifikasi: dari collection Notifikasi asli di backend, dikurangi
+    // yang ID-nya sudah tercatat "dibaca" di perangkat ini (lihat notifikasi.js).
+    const notifikasi = await apiGet('getNotifikasiRelawan', { token: sesi.token }).catch(() => []);
+    const readSet = getNotifReadSet(sesi.idRelawan);
+    let belum = 0;
+    (notifikasi || []).forEach(n => { if (!readSet.has(n.id)) belum++; });
+
+    const bellCount = document.getElementById('topbarBellCount');
+    if (bellCount) {
+      if (belum > 0) {
+        bellCount.textContent = belum > 9 ? '9+' : String(belum);
+        bellCount.classList.remove('is-hidden');
+      } else {
+        bellCount.classList.add('is-hidden');
+      }
+    }
+  } catch (err) {
+    // Sesi kedaluwarsa / akun dinonaktifkan — perlakuan sama seperti modul lain.
+    hapusSesiRelawan();
+    if (typeof simpanNotisLogin === 'function') simpanNotisLogin(err.message || 'Sesi telah berakhir. Silakan login kembali.');
+    window.location.href = 'login.html';
+  }
+}
+
+/** Kunci localStorage tempat menyimpan id notifikasi yang sudah "dibaca" per relawan. */
+function notifReadKey(idRelawan) { return 'sppgNotifRead:' + (idRelawan || 'anon'); }
+
+function getNotifReadSet(idRelawan) {
+  try {
+    const raw = localStorage.getItem(notifReadKey(idRelawan));
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch (e) { return new Set(); }
+}
+
+function addNotifRead(idRelawan, notifId) {
+  const set = getNotifReadSet(idRelawan);
+  set.add(notifId);
+  try { localStorage.setItem(notifReadKey(idRelawan), JSON.stringify(Array.from(set))); } catch (e) { /* abaikan */ }
+}
+
+function markAllNotifRead(idRelawan, ids) {
+  const set = getNotifReadSet(idRelawan);
+  ids.forEach(id => set.add(id));
+  try { localStorage.setItem(notifReadKey(idRelawan), JSON.stringify(Array.from(set))); } catch (e) { /* abaikan */ }
+}

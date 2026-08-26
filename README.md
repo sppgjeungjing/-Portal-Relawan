@@ -6,6 +6,27 @@ Alur inti: **1 QR Code → Absensi Relawan → Data Otomatis → Google Spreadsh
 
 ---
 
+## 0. Catatan Redesign (Tahap Ini) — Portal Relawan & Dashboard Admin Premium
+
+Tahap ini membangun ulang **tampilan & navigasi** Portal Relawan dan Dashboard Admin menjadi satu sistem UI responsif (HP → Tablet → Laptop → Desktop) dengan sidebar/drawer, hero, dan struktur modular — **tanpa mengubah logic/database Absensi yang sudah berjalan** (`absensi.html`, `script.js` tidak disentuh sama sekali).
+
+**Berkas baru:**
+- `app-shell.css`, `app-shell.js` — sistem sidebar/drawer/topbar/hero yang dipakai bersama seluruh halaman.
+- `dashboard.html` + `dashboard.js` — Dashboard Relawan (baru, landing setelah login; `index.html` sekarang jadi halaman "belum login" saja).
+- `dokumen.html` + `dokumen.js` — Dokumen & Panduan (baru, modul #7).
+- `notifikasi.html` + `notifikasi.js` — Notifikasi (baru, modul #6 — sebelumnya placeholder).
+- `google-apps-script/Dokumen.gs`, `Notifikasi.gs`, `Pengumuman.gs` — backend baru untuk 3 modul di atas + Pengumuman Admin.
+
+**Sheet baru yang perlu ditambahkan di Google Spreadsheet** (lihat §3 untuk format lengkap): `11_DOKUMEN`, `12_NOTIFIKASI`, `13_PENGUMUMAN`.
+
+**Perilaku baru yang perlu diketahui:**
+- Menambah **Informasi** atau **Jadwal** dari Admin otomatis mencatat satu baris di `12_NOTIFIKASI` (relawan langsung melihatnya di lonceng notifikasi) — logic asli `addInformasi()`/`addJadwal()` tidak diubah, hanya ditambah satu baris pemanggilan `catatNotifikasi_()` di akhir fungsi.
+- **Pengumuman** (menu baru di Dashboard Admin) adalah alat admin: sekali kirim, otomatis tayang ke halaman **Informasi** relawan dan tercatat di **Notifikasi** — bukan halaman terpisah di sisi relawan (selaras dengan referensi desain yang diberikan).
+- Status "sudah dibaca" pada Notifikasi disimpan per perangkat relawan (localStorage), bukan di server — supaya tidak perlu menambah kolom di sheet.
+- `login.js` sekarang mengarahkan relawan ke `dashboard.html` (bukan `profil.html`) setelah login berhasil.
+
+---
+
 ## Daftar Isi
 
 1. [Struktur Folder](#1-struktur-folder)
@@ -31,8 +52,9 @@ Alur inti: **1 QR Code → Absensi Relawan → Data Otomatis → Google Spreadsh
 ```
 SPPG-JEUNGJING-ABSENSI/
 │
-├── index.html              # Portal Relawan (halaman utama saat website dibuka)
-├── absensi.html             # Halaman absensi relawan (tujuan QR Code, dulunya index.html)
+├── index.html              # Halaman "belum login" (hero + tombol Masuk) — redirect ke dashboard.html jika sesi aktif
+├── dashboard.html            # Dashboard Relawan (landing setelah login) — BARU
+├── absensi.html             # Halaman absensi relawan (tujuan QR Code) — TIDAK DIUBAH
 ├── login.html                # Login relawan
 ├── profil.html                 # Profil relawan — identitas, ubah No HP/Email
 ├── pengaturan.html               # Pengaturan Akun — status, login terakhir, menu Ganti Password, keluar (Modul #3)
@@ -40,14 +62,21 @@ SPPG-JEUNGJING-ABSENSI/
 ├── riwayat.html                    # Riwayat Absensi — 14 hari terakhir milik sendiri (Modul #2)
 ├── informasi.html                    # Pusat Informasi — daftar pengumuman aktif (Modul #4)
 ├── jadwal.html                         # Jadwal & Penugasan — milik sendiri + broadcast (Modul #5)
-├── bantuan.html                          # Panduan, kendala, FAQ, kontak admin
-├── admin.html                              # Dashboard admin (dilindungi login)
-├── qrcode.html                               # Halaman cetak QR Code (untuk admin) — mengarah ke absensi.html
+├── notifikasi.html                       # Notification Center — BARU (Modul #6)
+├── dokumen.html                            # Dokumen & Panduan — BARU (Modul #7)
+├── bantuan.html                              # Panduan, kendala, FAQ, kontak admin
+├── admin.html                                  # Dashboard admin (dilindungi login) — sidebar/drawer, modul baru
+├── qrcode.html                                   # Halaman cetak QR Code (untuk admin) — mengarah ke absensi.html
 │
-├── notifikasi.html      # Masih placeholder — Modul Notifikasi belum dikerjakan
+├── style.css                  # Desain dasar (dipakai halaman Absensi & Admin)
+├── portal.css                  # Desain komponen konten Portal (kartu, form, dsb.)
+├── admin.css                    # Desain komponen Dashboard Admin (tabel, filter, dsb.)
+├── app-shell.css                  # BARU — sistem sidebar/drawer/topbar/hero responsif (dipakai semua halaman)
+├── app-shell.js                     # BARU — perilaku sidebar/drawer + boot header relawan (nama, status, badge notif)
+├── dashboard.js                       # BARU — logic Dashboard Relawan
+├── notifikasi.js                        # BARU — logic halaman Notifikasi
+├── dokumen.js                             # BARU — logic halaman Dokumen & Panduan
 │
-├── style.css                  # Desain utama (dipakai halaman Absensi & Admin)
-├── portal.css                  # Desain khusus Portal & seluruh halaman relawan
 ├── admin.css                    # Style tambahan khusus dashboard
 │
 ├── config.js                    # 1 tempat untuk mengisi URL Apps Script
@@ -78,7 +107,10 @@ SPPG-JEUNGJING-ABSENSI/
 │   ├── 07_AKUN_RELAWAN.csv                   # Hanya header — akun login relawan (Tahap 2-4)
 │   ├── 08_REKAP_2_MINGGU.csv                  # Hanya header — rekap periode gajian 2 mingguan
 │   ├── 09_INFORMASI.csv                        # Hanya header — pengumuman/informasi (Modul #4)
-│   └── 10_JADWAL.csv                            # Hanya header — jadwal & penugasan (Modul #5)
+│   ├── 10_JADWAL.csv                            # Hanya header — jadwal & penugasan (Modul #5)
+│   ├── 11_DOKUMEN.csv                            # BARU — hanya header — Dokumen & Panduan (Modul #7)
+│   ├── 12_NOTIFIKASI.csv                          # BARU — hanya header — Notification Center (Modul #6)
+│   └── 13_PENGUMUMAN.csv                           # BARU — hanya header — Pengumuman (alat Admin)
 │
 ├── google-apps-script/                        # Kode backend — disalin ke script.google.com
 │   ├── Code.gs                                  # Routing utama (doGet / doPost)
@@ -88,7 +120,10 @@ SPPG-JEUNGJING-ABSENSI/
 │   ├── Absensi.gs                                  # Absensi, cegah duplikasi, rekap, riwayat pribadi
 │   ├── Admin.gs                                     # Login admin & sesi
 │   ├── Informasi.gs                                  # Pusat Informasi (Modul #4)
-│   └── Jadwal.gs                                      # Jadwal & Penugasan (Modul #5)
+│   ├── Jadwal.gs                                      # Jadwal & Penugasan (Modul #5)
+│   ├── Dokumen.gs                                      # BARU — Dokumen & Panduan (Modul #7)
+│   ├── Notifikasi.gs                                    # BARU — Notification Center (Modul #6)
+│   └── Pengumuman.gs                                     # BARU — Pengumuman (alat Admin, tayang ke Informasi + Notifikasi)
 │
 └── README.md                                          # Dokumen ini
 ```
@@ -132,7 +167,7 @@ Frontend (GitHub Pages) hanya berkomunikasi dengan Apps Script melalui HTTP bias
 ## 3. Langkah 1 — Setup Google Spreadsheet
 
 1. Buat Google Spreadsheet baru (spreadsheet.new), beri nama misalnya **"SPPG Jeungjing — Database Absensi"**.
-2. Buat **8 sheet (tab)** dengan nama **PERSIS** seperti berikut (huruf besar/kecil dan garis bawah harus sama persis, karena dibaca oleh kode):
+2. Buat **13 sheet (tab)** dengan nama **PERSIS** seperti berikut (huruf besar/kecil dan garis bawah harus sama persis, karena dibaca oleh kode):
    - `01_DATA_RELAWAN`
    - `02_DATA_DIVISI`
    - `03_DATA_ABSENSI`
@@ -141,12 +176,25 @@ Frontend (GitHub Pages) hanya berkomunikasi dengan Apps Script melalui HTTP bias
    - `06_ADMIN`
    - `07_AKUN_RELAWAN`
    - `08_REKAP_2_MINGGU`
+   - `09_INFORMASI`
+   - `10_JADWAL`
+   - `11_DOKUMEN` — **baru**
+   - `12_NOTIFIKASI` — **baru**
+   - `13_PENGUMUMAN` — **baru**
 3. Untuk **setiap** sheet, impor file CSV yang namanya sama dari folder `seed-data/`:
    - Buka sheet tujuan (misalnya `01_DATA_RELAWAN`) → menu **File → Impor → Upload** → pilih file `.csv` yang sesuai.
    - Pada "Lokasi impor", pilih **"Ganti sheet saat ini"**, lalu klik **Impor data**.
    - `01_DATA_RELAWAN.csv` sudah berisi **47 relawan awal** sesuai data yang Anda berikan, lengkap dengan ID R001–R047.
    - `02_DATA_DIVISI.csv` sudah berisi **12 divisi**, termasuk `HEAD CHEF` yang sengaja dikosongkan (belum ada nama relawan, sesuai catatan Anda).
-   - Sheet lainnya (termasuk `07_AKUN_RELAWAN`) hanya berisi baris judul kolom — akan terisi otomatis oleh sistem saat Admin membuat akun relawan.
+   - Sheet lainnya (termasuk `07_AKUN_RELAWAN`, `11_DOKUMEN`, `12_NOTIFIKASI`, `13_PENGUMUMAN`) hanya berisi baris judul kolom — akan terisi otomatis lewat Dashboard Admin.
+
+**Format kolom 3 sheet baru** (kalau lebih suka membuat manual daripada impor CSV):
+
+| Sheet | Kolom |
+|---|---|
+| `11_DOKUMEN` | `ID, JUDUL, DESKRIPSI, KATEGORI, URL, STATUS, DIBUAT_PADA` |
+| `12_NOTIFIKASI` | `ID, KATEGORI, JUDUL, ISI, ID_RELAWAN, DIBUAT_PADA` |
+| `13_PENGUMUMAN` | `ID, JUDUL, ISI, TARGET, TANGGAL_PUBLIKASI, STATUS, DIBUAT_PADA` |
 
 ---
 
@@ -154,8 +202,8 @@ Frontend (GitHub Pages) hanya berkomunikasi dengan Apps Script melalui HTTP bias
 
 1. Pada Spreadsheet yang sama, buka menu **Extensions → Apps Script**.
 2. Hapus seluruh isi file `Code.gs` bawaan (kosongkan).
-3. Buat **5 file baru** (klik ikon **+** di samping "Files", pilih "Script"), beri nama persis:
-   `Utils`, `Admin`, `Relawan`, `Absensi`, `Code` — Apps Script otomatis menambahkan akhiran `.gs`.
+3. Buat **11 file baru** (klik ikon **+** di samping "Files", pilih "Script"), beri nama persis:
+   `Utils`, `Admin`, `Relawan`, `Absensi`, `Akun`, `Informasi`, `Jadwal`, `Dokumen`, `Notifikasi`, `Pengumuman`, `Code` — Apps Script otomatis menambahkan akhiran `.gs`.
 4. Salin isi masing-masing file dari folder `google-apps-script/` pada paket ini ke file dengan nama yang sesuai.
 5. Buka file **Admin.gs**, cari fungsi `setupAdminPassword()`, lalu ganti nilai `USERNAME_BARU` dan `PASSWORD_BARU` sesuai keinginan Anda.
 6. Pada dropdown fungsi di atas editor, pilih **setupAdminPassword**, lalu klik tombol **Run (▶)**. Berikan izin akses (Authorize) saat diminta — ini normal karena skrip perlu mengakses Spreadsheet Anda sendiri.

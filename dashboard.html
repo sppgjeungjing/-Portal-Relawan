@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — SPPG Jeungjing</title>
+<meta name="description" content="Dashboard Relawan Portal SPPG Jeungjing">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="app-shell.css">
+</head>
+<body>
+<div class="shell">
+  <div class="shell-body">
+  <div class="shell-overlay" id="shellOverlay"></div>
+  <aside class="shell-sidebar" id="shellSidebar">
+    <div class="shell-sidebar-head">
+      <img src="assets/logo.png" alt="Logo SPPG Jeungjing">
+      <div class="shell-sidebar-head-text">
+        <strong>SPPG JEUNGJING</strong>
+        <span>Portal Relawan</span>
+      </div>
+      <button type="button" class="shell-sidebar-close" id="shellSidebarClose" aria-label="Tutup menu"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+    </div>
+    <div class="shell-sidebar-user" id="shellSidebarUser">
+      <div class="shell-sidebar-user-avatar" id="sidebarAvatar">–</div>
+      <div class="shell-sidebar-user-text">
+        <strong id="sidebarNama">Memuat...</strong>
+        <span class="shell-sidebar-user-status" id="sidebarStatus"></span>
+      </div>
+    </div>
+    <nav class="shell-nav" aria-label="Menu Portal Relawan">
+    <p class="shell-nav-group-title">Utama</p>
+    <a href="dashboard.html" class="shell-nav-link active"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg></span><span>Dashboard</span></a>
+    <a href="profil.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg></span><span>Profil Saya</span></a>
+    <p class="shell-nav-group-title">Absensi</p>
+    <a href="absensi.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M9 12l2 2 4-4"/></svg></span><span>Absensi Masuk / Pulang</span></a>
+    <a href="riwayat.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span><span>Riwayat Absensi</span></a>
+    <p class="shell-nav-group-title">Aktivitas</p>
+    <a href="jadwal.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span><span>Jadwal & Penugasan</span></a>
+    <a href="notifikasi.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21h4"/></svg></span><span>Notifikasi</span></a>
+    <a href="informasi.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg></span><span>Informasi</span></a>
+    <p class="shell-nav-group-title">Akun & Lainnya</p>
+    <a href="pengaturan.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg></span><span>Pengaturan Akun</span></a>
+    <a href="dokumen.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span><span>Dokumen & Panduan</span></a>
+    <a href="bantuan.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.9.4-1.5 1-1.5 2.2"/><path d="M12 17v.01"/></svg></span><span>Bantuan</span></a>
+    </nav>
+    <button type="button" class="shell-nav-link shell-nav-link--danger" id="btnLogoutShell" style="margin:0 10px 8px;width:calc(100% - 20px);"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span><span>Keluar</span></button>
+    <button type="button" class="shell-sidebar-collapse-toggle" id="shellCollapseToggle"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg> Ciutkan Menu</button>
+    <div class="shell-sidebar-foot">SPPG JEUNGJING · Portal Relawan<br>Kp. Kecok, RT.004, Ds. Jeungjing, Kec. Cisoka, Kab. Tangerang - Banten, 15730</div>
+  </aside>
+    <div class="shell-main">
+  <header class="shell-topbar">
+    <button type="button" class="shell-topbar-burger" aria-label="Buka menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
+    <div class="shell-topbar-brand">
+      <img src="assets/logo.png" alt="Logo SPPG Jeungjing">
+      <div class="shell-topbar-brand-text">
+        <strong>SPPG JEUNGJING</strong>
+        <span>Portal Relawan</span>
+      </div>
+    </div>
+    <div class="shell-topbar-right">
+      <a href="notifikasi.html" class="shell-topbar-bell" aria-label="Notifikasi" id="topbarBell">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21h4"/></svg>
+        <span class="shell-topbar-bell-count is-hidden" id="topbarBellCount">0</span>
+      </a>
+      <div class="shell-topbar-avatar" id="topbarAvatar">–</div>
+    </div>
+  </header>
+      <main class="shell-content">
+        <div id="dashboardMain" style="display:none;">
+
+          <section class="hero-split">
+            <div class="hero-split-visual" aria-hidden="true">
+<svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <rect width="400" height="260" fill="none"/>
+            <circle cx="330" cy="40" r="70" fill="rgba(255,255,255,0.10)"/>
+            <circle cx="60" cy="220" r="90" fill="rgba(255,255,255,0.08)"/>
+            <g transform="translate(120,60)" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">
+              <circle cx="80" cy="34" r="22"/>
+              <path d="M30 130c0-30 22-50 50-50s50 20 50 50"/>
+              <path d="M150 40c14 0 24 12 24 26s-10 26-24 26"/>
+              <path d="M150 92c16 4 26 18 26 38"/>
+              <path d="M10 92c-16 4-26 18-26 38" transform="translate(20,0)"/>
+            </g>
+            <g transform="translate(60,170)" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="3" stroke-linecap="round">
+              <path d="M0 20l16 16 34-34"/>
+              <circle cx="25" cy="20" r="34" opacity="0.4"/>
+            </g>
+          </svg>
+            </div>
+            <div class="hero-split-body">
+              <p class="hero-eyebrow">Portal Relawan &middot; SPPG Jeungjing</p>
+              <h1>Selamat Datang, <span id="heroNama">Relawan</span> 👋</h1>
+              <p id="heroDivisi">Memuat data relawan...</p>
+              <p>Akses absensi, jadwal, penugasan, dan berbagai informasi penting Anda dengan mudah dalam satu tempat.</p>
+              <span class="hero-status-pill" id="heroStatusPill">Memuat status...</span>
+            </div>
+          </section>
+
+          <div class="section-heading"><h2>Ringkasan Absensi (14 Hari Terakhir)</h2><a href="riwayat.html">Lihat riwayat &rarr;</a></div>
+          <div class="summary-grid">
+            <div class="summary-card"><div class="summary-value" id="sumTotal">–</div><div class="summary-label">Total Hadir</div></div>
+            <div class="summary-card accent-warning"><div class="summary-value" id="sumTerlambat">–</div><div class="summary-label">Terlambat</div></div>
+            <div class="summary-card accent-info"><div class="summary-value" id="sumIzin">–</div><div class="summary-label">Izin</div></div>
+            <div class="summary-card accent-danger"><div class="summary-value" id="sumSakit">–</div><div class="summary-label">Sakit</div></div>
+          </div>
+
+          <div class="section-heading"><h2>Menu Utama</h2></div>
+          <div class="dash-menu-grid">
+          <a href="profil.html" class="dash-menu-card">
+            <span class="dash-menu-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg></span>
+            <span class="dash-menu-card-text"><h3>Profil Saya</h3><p>Identitas & data kontak Anda</p></span>
+            <span class="dash-menu-card-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a href="absensi.html" class="dash-menu-card">
+            <span class="dash-menu-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M9 12l2 2 4-4"/></svg></span>
+            <span class="dash-menu-card-text"><h3>Absensi</h3><p>Catat kehadiran Masuk / Pulang</p></span>
+            <span class="dash-menu-card-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a href="jadwal.html" class="dash-menu-card">
+            <span class="dash-menu-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>
+            <span class="dash-menu-card-text"><h3>Jadwal & Penugasan</h3><p>Lihat jadwal dan tugas Anda</p></span>
+            <span class="dash-menu-card-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a href="notifikasi.html" class="dash-menu-card">
+            <span class="dash-menu-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21h4"/></svg></span>
+            <span class="dash-menu-card-text"><h3>Notifikasi</h3><p>Pemberitahuan terbaru untuk Anda</p></span>
+            <span class="dash-menu-card-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a href="informasi.html" class="dash-menu-card">
+            <span class="dash-menu-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg></span>
+            <span class="dash-menu-card-text"><h3>Informasi</h3><p>Pengumuman & info SPPG Jeungjing</p></span>
+            <span class="dash-menu-card-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a href="pengaturan.html" class="dash-menu-card">
+            <span class="dash-menu-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg></span>
+            <span class="dash-menu-card-text"><h3>Pengaturan Akun</h3><p>Status akun & keamanan</p></span>
+            <span class="dash-menu-card-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a href="dokumen.html" class="dash-menu-card">
+            <span class="dash-menu-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span>
+            <span class="dash-menu-card-text"><h3>Dokumen & Panduan</h3><p>SOP, formulir, dan panduan kerja</p></span>
+            <span class="dash-menu-card-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <a href="bantuan.html" class="dash-menu-card">
+            <span class="dash-menu-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.9.4-1.5 1-1.5 2.2"/><path d="M12 17v.01"/></svg></span>
+            <span class="dash-menu-card-text"><h3>Bantuan</h3><p>Panduan penggunaan & FAQ</p></span>
+            <span class="dash-menu-card-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </a>
+          <button type="button" class="dash-menu-card dash-menu-card--danger" id="btnLogoutMenu" style="width:100%;cursor:pointer;font-family:inherit;">
+            <span class="dash-menu-card-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
+            <span class="dash-menu-card-text"><h3>Keluar</h3><p>Akhiri sesi Portal Relawan</p></span>
+            <span class="dash-menu-card-arrow"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+          </div>
+
+          <div class="panel-columns">
+            <section class="panel-block">
+              <p class="panel-block-title">Aktivitas Terbaru</p>
+              <div class="activity-list" id="listAktivitas"></div>
+            </section>
+            <section class="panel-block">
+              <p class="panel-block-title">Informasi Penting</p>
+              <div id="listInformasiPenting"></div>
+            </section>
+          </div>
+
+        </div>
+
+        <div class="toast is-hidden" id="errorToast" role="alert"></div>
+        <div class="loading-overlay is-hidden" id="loadingOverlay">
+          <div class="spinner"></div>
+          <p id="loadingText">Memuat dashboard...</p>
+        </div>
+      </main>
+  <footer class="shell-footer">
+    <p><strong>SPPG JEUNGJING</strong> · Portal Relawan</p>
+    <p>Kp. Kecok, RT.004, Ds. Jeungjing, Kec. Cisoka, Kab. Tangerang - Banten, 15730</p>
+    <p class="credit">© 2026 SPPG Jeungjing · Developed by Fatur Rizky Fahriansyah</p>
+  </footer>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="auth-relawan.js"></script>
+<script src="app-shell.js"></script>
+<script src="dashboard.js"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){var b=document.getElementById("btnLogoutMenu");if(b)b.addEventListener("click",function(){document.getElementById("btnLogoutShell").click();});});</script>
+<script>document.addEventListener("DOMContentLoaded", bootRelawanShell);</script>
+</body>
+</html>
