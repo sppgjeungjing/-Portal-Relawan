@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Jika sudah login sebelumnya, langsung ke Profil — tidak perlu login ulang.
   const sesiAda = ambilSesiRelawan();
   if (sesiAda && sesiAda.token) {
-    window.location.href = 'profil.html';
+    window.location.href = 'dashboard.html';
     return;
   }
 
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cardGanti.classList.remove('is-hidden');
       } else {
         simpanSesiRelawan(hasil);
-        window.location.href = 'profil.html';
+        window.location.href = 'dashboard.html';
       }
     } catch (err) {
       hideLoading();
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         divisi: sesiSementara.divisi,
         wajibGantiPassword: false
       });
-      window.location.href = 'profil.html';
+      window.location.href = 'dashboard.html';
     } catch (err) {
       hideLoading();
       showError(err.message);

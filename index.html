@@ -2,20 +2,20 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPPG Jeungjing — Portal Relawan</title>
-<meta name="description" content="Portal Relawan SPPG Jeungjing — Satuan Pelayanan Pemenuhan Gizi, Desa Jeungjing, Cisoka, Tangerang">
+<meta name="description" content="Portal Relawan SPPG Jeungjing — Satuan Pelayanan Pemenuhan Gizi, Kp. Kecok, Ds. Jeungjing, Kec. Cisoka, Kab. Tangerang, Banten">
 <link rel="icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="app-shell.css">
 </head>
 <body>
-<div class="page-shell">
+<div class="page-shell" id="landingRoot" style="display:none;">
 
-  <!-- Latar dekoratif, sama seperti halaman lain -->
   <div class="bg-decor" aria-hidden="true">
     <div class="blob blob--sky-top"></div>
     <div class="blob blob--gold-left"></div>
@@ -23,125 +23,82 @@
     <div class="dots"></div>
   </div>
 
-  <header class="site-header">
-    <div class="header-inner">
-      <div class="header-brand">
-        <img src="assets/logo.png" alt="Logo SPPG Jeungjing" class="header-logo">
-        <div class="header-text">
-          <h1>SPPG JEUNGJING</h1>
-          <p>Portal Relawan</p>
+  <div class="layout-split">
+
+    <aside class="brand-panel" aria-hidden="true">
+      <div class="brand-blob brand-blob--1"></div>
+      <div class="brand-blob brand-blob--2"></div>
+      <div class="brand-dots"></div>
+      <div class="brand-panel-content">
+        <div class="brand-badges">
+          <img src="assets/logo.png" alt="" class="brand-badge-logo">
+          <span class="brand-badge-divider"></span>
+          <img src="assets/logo-bgn.png" alt="" class="brand-badge-logo">
         </div>
+        <p class="brand-eyebrow">Badan Gizi Nasional</p>
+        <h2 class="brand-heading">Melayani dengan Gizi,<br>Mengabdi dengan Hati.</h2>
+        <p class="brand-desc">SPPG Jeungjing adalah Satuan Pelayanan Pemenuhan Gizi di bawah Badan Gizi Nasional yang mendukung pemenuhan gizi anak Indonesia. Portal ini adalah pusat layanan digital bagi seluruh relawan SPPG Jeungjing.</p>
+        <ul class="brand-points">
+          <li>Absensi, jadwal, dan penugasan dalam satu tempat</li>
+          <li>Data tercatat otomatis &amp; aman</li>
+          <li>Dapat diakses kapan saja dari HP, laptop, atau desktop</li>
+        </ul>
       </div>
-      <img src="assets/logo-bgn.png" alt="Logo Badan Gizi Nasional" class="header-logo header-logo--bgn">
-    </div>
-  </header>
+    </aside>
 
-  <main class="portal-main">
+    <div>
+      <header class="site-header">
+        <div class="header-inner">
+          <div class="header-brand">
+            <img src="assets/logo.png" alt="Logo SPPG Jeungjing" class="header-logo">
+            <div class="header-text">
+              <h1>SPPG JEUNGJING</h1>
+              <p>Portal Relawan</p>
+            </div>
+          </div>
+          <img src="assets/logo-bgn.png" alt="Logo Badan Gizi Nasional" class="header-logo header-logo--bgn">
+        </div>
+      </header>
 
-    <p class="portal-identity"><strong>Satuan Pelayanan Pemenuhan Gizi</strong><br>Desa Jeungjing, Cisoka, Tangerang</p>
+      <main class="auth-main">
+        <p class="portal-identity"><strong>Satuan Pelayanan Pemenuhan Gizi</strong><br>Kp. Kecok, RT.004, Ds. Jeungjing, Kec. Cisoka, Kab. Tangerang - Banten, 15730</p>
 
-    <section class="portal-greeting">
-      <div class="portal-greeting-top">
-        <h2>Selamat datang, Relawan 👋</h2>
-        <span class="portal-status-pill">Sistem Aktif</span>
-      </div>
-      <p>Gunakan menu di bawah untuk mengakses absensi, jadwal, dan informasi seputar kegiatan relawan SPPG Jeungjing.</p>
-    </section>
+        <section class="auth-card" style="text-align:center;">
+          <h2 style="font-size:20px;">Selamat Datang di Portal Relawan 👋</h2>
+          <p class="auth-sub" style="margin-bottom:22px;">Silakan masuk untuk mengakses layanan dan fitur Portal SPPG Jeungjing.</p>
 
-    <a href="absensi.html" class="portal-quick-action">
-      <span class="portal-quick-action-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </span>
-      <span class="portal-quick-action-text">
-        <h3>Absensi</h3>
-        <p>Catat kehadiran Masuk / Pulang</p>
-      </span>
-      <span class="portal-quick-action-arrow" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-      </span>
-    </a>
+          <a href="login.html" class="btn-submit" style="display:block;text-decoration:none;box-sizing:border-box;">Masuk</a>
 
-    <p class="portal-section-title">Menu Portal</p>
-    <nav class="portal-menu-grid" aria-label="Menu Portal Relawan">
+          <p style="font-size:12.5px;color:var(--color-text-muted);margin:16px 0 0;line-height:1.6;">Belum memiliki akun? Hubungi Admin untuk mendapatkan akses.</p>
+        </section>
+      </main>
 
-      <a href="index.html" class="portal-menu-item">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg></span>
-        <span>Beranda</span>
-      </a>
-
-      <a href="profil.html" class="portal-menu-item">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg></span>
-        <span>Profil Saya</span>
-      </a>
-
-      <a href="absensi.html" class="portal-menu-item">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M9 12l2 2 4-4"/></svg></span>
-        <span>Absensi</span>
-      </a>
-
-      <a href="riwayat.html" class="portal-menu-item">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>
-        <span>Riwayat Absensi</span>
-      </a>
-
-      <a href="jadwal.html" class="portal-menu-item">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>
-        <span>Jadwal &amp; Penugasan</span>
-      </a>
-
-      <a href="informasi.html" class="portal-menu-item">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg></span>
-        <span>Informasi</span>
-      </a>
-
-      <a href="notifikasi.html" class="portal-menu-item">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21h4"/></svg></span>
-        <span>Notifikasi</span>
-      </a>
-
-      <a href="pengaturan.html" class="portal-menu-item">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg></span>
-        <span>Pengaturan Akun</span>
-      </a>
-
-      <a href="bantuan.html" class="portal-menu-item">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.9.4-1.5 1-1.5 2.2"/><path d="M12 17v.01"/></svg></span>
-        <span>Bantuan</span>
-      </a>
-
-      <button type="button" class="portal-menu-item portal-menu-item--logout" id="btnLogout">
-        <span class="portal-menu-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
-        <span>Keluar</span>
-      </button>
-
-    </nav>
-
-    <div class="portal-info-card">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg>
-      <div>
-        <h4>Portal masih tahap awal</h4>
-        <p>Saat ini menu <strong>Absensi</strong> sudah dapat digunakan sepenuhnya. Menu lainnya akan diaktifkan bertahap pada pengembangan berikutnya.</p>
-      </div>
+      <footer class="site-footer">
+        <p><strong>SPPG JEUNGJING</strong> · Portal Relawan</p>
+        <p>Kp. Kecok, RT.004, Ds. Jeungjing, Kec. Cisoka, Kab. Tangerang - Banten, 15730</p>
+        <a href="admin.html" class="admin-link">Admin</a>
+        <p class="credit">© 2026 SPPG Jeungjing · Developed by Fatur Rizky Fahriansyah</p>
+      </footer>
     </div>
 
-  </main>
-
-  <footer class="site-footer">
-    <p><strong>SPPG JEUNGJING</strong> · Portal Relawan</p>
-    <p>Satuan Pelayanan Pemenuhan Gizi · Desa Jeungjing, Cisoka, Tangerang</p>
-    <a href="admin.html" class="admin-link">Admin</a>
-    <p class="credit">© 2026 SPPG Jeungjing · Developed by Fatur Rizky Fahriansyah</p>
-  </footer>
-
+  </div>
 </div>
 
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="auth-relawan.js"></script>
 <script>
-  // Belum ada sistem akun/login, jadi "Keluar" belum memiliki sesi untuk
-  // diakhiri. Placeholder ini akan diganti dengan logout sungguhan begitu
-  // sistem akun relawan dikembangkan pada fase berikutnya.
-  document.getElementById('btnLogout').addEventListener('click', function () {
-    alert('Sistem akun relawan belum tersedia, sehingga belum ada sesi untuk diakhiri. Fitur ini akan aktif setelah sistem akun dikembangkan.');
-  });
+  // Kondisi belum login (Bagian 7): tampilkan hero + tombol Masuk saja,
+  // TANPA data pribadi apa pun. Kalau sesi relawan masih berlaku, langsung
+  // arahkan ke Dashboard supaya tidak perlu login ulang.
+  (function () {
+    var sesi = ambilSesiRelawan();
+    if (sesi && sesi.token) {
+      window.location.href = 'dashboard.html';
+      return;
+    }
+    document.getElementById('landingRoot').style.display = '';
+  })();
 </script>
 </body>
 </html>

@@ -15,7 +15,10 @@
     rekapDuaMinggu: [],
     akunList: [],        // status akun relawan, untuk tab "Akun Relawan"
     informasiList: [],    // untuk tab "Informasi"
-    jadwalList: []          // untuk tab "Jadwal & Penugasan"
+    jadwalList: [],         // untuk tab "Jadwal & Penugasan"
+    dokumenList: [],          // untuk tab "Dokumen"
+    notifikasiList: [],         // untuk tab "Notifikasi"
+    pengumumanList: []            // untuk tab "Pengumuman"
   };
 
   const el = {
@@ -95,7 +98,36 @@
     inputPenugasanJadwal: document.getElementById('inputPenugasanJadwal'),
     inputKeteranganJadwal: document.getElementById('inputKeteranganJadwal'),
     selectStatusJadwal: document.getElementById('selectStatusJadwal'),
-    tbodyJadwal: document.getElementById('tbodyJadwal')
+    tbodyJadwal: document.getElementById('tbodyJadwal'),
+
+    ovTotalRelawan: document.getElementById('ovTotalRelawan'),
+    ovRelawanAktif: document.getElementById('ovRelawanAktif'),
+    ovAkunAktif: document.getElementById('ovAkunAktif'),
+    ovNotifikasiBaru: document.getElementById('ovNotifikasiBaru'),
+    ovAktivitasList: document.getElementById('ovAktivitasList'),
+    ovBelumAkun: document.getElementById('ovBelumAkun'),
+    ovAkunAktif2: document.getElementById('ovAkunAktif2'),
+    ovAkunNonaktif: document.getElementById('ovAkunNonaktif'),
+
+    formTambahDokumen: document.getElementById('formTambahDokumen'),
+    inputJudulDokumen: document.getElementById('inputJudulDokumen'),
+    inputDeskripsiDokumen: document.getElementById('inputDeskripsiDokumen'),
+    selectKategoriDokumen: document.getElementById('selectKategoriDokumen'),
+    inputUrlDokumen: document.getElementById('inputUrlDokumen'),
+    listDokumenAdmin: document.getElementById('listDokumenAdmin'),
+    dokumenAdminTabs: document.getElementById('dokumenAdminTabs'),
+
+    formTambahNotifikasi: document.getElementById('formTambahNotifikasi'),
+    inputJudulNotifikasi: document.getElementById('inputJudulNotifikasi'),
+    inputIsiNotifikasi: document.getElementById('inputIsiNotifikasi'),
+    listNotifikasiAdmin: document.getElementById('listNotifikasiAdmin'),
+
+    formPengumuman: document.getElementById('formPengumuman'),
+    inputJudulPengumuman: document.getElementById('inputJudulPengumuman'),
+    inputIsiPengumuman: document.getElementById('inputIsiPengumuman'),
+    selectTargetPengumuman: document.getElementById('selectTargetPengumuman'),
+    inputJadwalPublikasi: document.getElementById('inputJadwalPublikasi'),
+    listPengumumanAdmin: document.getElementById('listPengumumanAdmin')
   };
 
   // ===== LOGIN / LOGOUT =====
@@ -194,18 +226,24 @@
   async function initDashboard() {
     showLoading('Memuat data dashboard...');
     try {
-      const [divisiList, relawanList, akunList, informasiList, jadwalList] = await Promise.all([
+      const [divisiList, relawanList, akunList, informasiList, jadwalList, dokumenList, notifikasiList, pengumumanList] = await Promise.all([
         apiGet('getDivisi'),
         apiGet('getRelawan', { semua: '1' }),
         apiGet('getAkunRelawanList', { token: authToken }),
         apiGet('getInformasiListAdmin', { token: authToken }),
-        apiGet('getJadwalListAdmin', { token: authToken })
+        apiGet('getJadwalListAdmin', { token: authToken }),
+        apiGet('getDokumenListAdmin', { token: authToken }),
+        apiGet('getNotifikasiListAdmin', { token: authToken }),
+        apiGet('getPengumumanListAdmin', { token: authToken })
       ]);
       cache.divisiList = divisiList;
       cache.relawanList = relawanList;
       cache.akunList = akunList;
       cache.informasiList = informasiList;
       cache.jadwalList = jadwalList;
+      cache.dokumenList = dokumenList;
+      cache.notifikasiList = notifikasiList;
+      cache.pengumumanList = pengumumanList;
       fillDivisiSelects();
       fillRelawanJadwalSelect();
       renderRelawanTable();
@@ -213,6 +251,10 @@
       renderAkunTable();
       renderInformasiAdmin();
       renderJadwalTable();
+      renderDokumenAdmin();
+      renderNotifikasiAdmin();
+      renderPengumumanAdmin();
+      renderOverview();
 
       const now = new Date();
       el.filterTanggal.value = toDateInputValue(now);
@@ -883,4 +925,234 @@
       hideLoading();
     }
   });
+
+  // ===== DASHBOARD (OVERVIEW) — data aktual, tidak hard-code =====
+  function iconInformasi_() { return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg>'; }
+  function iconJadwal_() { return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>'; }
+  function iconSistem_() { return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8l0 4l3 2"/></svg>'; }
+  function notifIcon_(kategori) {
+    if (kategori === 'Informasi') return iconInformasi_();
+    if (kategori === 'Sistem') return iconSistem_();
+    return iconJadwal_();
+  }
+  function notifTypeClass_(kategori) {
+    if (kategori === 'Informasi') return 'type-informasi';
+    if (kategori === 'Sistem') return 'type-absensi';
+    return 'type-jadwal';
+  }
+
+  function renderOverview() {
+    if (!el.ovTotalRelawan) return;
+    const totalRelawan = cache.relawanList.length;
+    const relawanAktif = cache.relawanList.filter(r => (r.status || 'AKTIF') === 'AKTIF').length;
+    const akunById = {};
+    cache.akunList.forEach(a => { akunById[a.idRelawan] = a; });
+    let belumAkun = 0, akunAktif = 0, akunNonaktif = 0;
+    cache.relawanList.forEach(r => {
+      const akun = akunById[r.id];
+      if (!akun) belumAkun++;
+      else if (akun.statusAkun === 'AKTIF') akunAktif++;
+      else akunNonaktif++;
+    });
+
+    el.ovTotalRelawan.textContent = totalRelawan;
+    el.ovRelawanAktif.textContent = relawanAktif;
+    el.ovAkunAktif.textContent = akunAktif;
+    el.ovBelumAkun.textContent = belumAkun;
+    el.ovAkunAktif2.textContent = akunAktif;
+    el.ovAkunNonaktif.textContent = akunNonaktif;
+
+    // "Notifikasi Baru" = notifikasi yang tercatat dalam 3 hari terakhir (data aktual, bukan statis).
+    const batasWaktu = new Date();
+    batasWaktu.setDate(batasWaktu.getDate() - 3);
+    const notifBaru = cache.notifikasiList.filter(n => {
+      const d = new Date(n.tanggal);
+      return !isNaN(d.getTime()) && d >= batasWaktu;
+    });
+    el.ovNotifikasiBaru.textContent = notifBaru.length;
+
+    const aktivitas = cache.notifikasiList.slice(0, 6);
+    if (!aktivitas.length) {
+      el.ovAktivitasList.innerHTML = '<div class="empty-state">Belum ada aktivitas terbaru.</div>';
+    } else {
+      el.ovAktivitasList.innerHTML = aktivitas.map(n => `
+        <div class="activity-item">
+          <span class="activity-item-icon ${notifTypeClass_(n.kategori)}">${notifIcon_(n.kategori)}</span>
+          <span class="activity-item-body">
+            <p class="activity-title">${escapeHtml(n.judul)}</p>
+            <p class="activity-desc">${escapeHtml(n.isi)}</p>
+            <p class="activity-time">${escapeHtml(formatTanggalWaktuIndoShell(n.tanggal))}</p>
+          </span>
+        </div>`).join('');
+    }
+  }
+
+  // ===== DOKUMEN =====
+  let dokumenKategoriAktif = '';
+  function renderDokumenAdmin() {
+    let rows = cache.dokumenList;
+    if (dokumenKategoriAktif) rows = rows.filter(d => d.kategori === dokumenKategoriAktif);
+
+    if (!rows.length) {
+      el.listDokumenAdmin.innerHTML = '<div class="empty-state">Belum ada dokumen yang tersedia.</div>';
+      return;
+    }
+    el.listDokumenAdmin.innerHTML = rows.map(d => `
+      <div class="doc-item" data-id="${escapeHtml(d.id)}">
+        <span class="doc-item-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M15 3v5h5"/></svg></span>
+        <span class="doc-item-text">
+          <strong>${escapeHtml(d.judul)}</strong>
+          <span>${escapeHtml(d.deskripsi || '')}</span>
+          <span class="badge ${d.status === 'AKTIF' ? 'aktif' : 'akun-nonaktif'}" style="margin-top:4px;display:inline-block;">${escapeHtml(d.kategori)} &middot; ${d.status === 'AKTIF' ? 'Aktif' : 'Nonaktif'}</span>
+        </span>
+        <button type="button" class="btn-mini btn-toggle-dokumen" data-status-baru="${d.status === 'AKTIF' ? 'NONAKTIF' : 'AKTIF'}">${d.status === 'AKTIF' ? 'Nonaktifkan' : 'Aktifkan'}</button>
+      </div>`).join('');
+
+    el.listDokumenAdmin.querySelectorAll('.btn-toggle-dokumen').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('.doc-item').dataset.id;
+        const statusBaru = btn.dataset.statusBaru;
+        showLoading('Menyimpan...');
+        try {
+          await apiPost('updateStatusDokumen', { token: authToken, id, statusBaru });
+          const dok = cache.dokumenList.find(d => d.id === id);
+          if (dok) dok.status = statusBaru;
+          renderDokumenAdmin();
+          showSuccess('Status dokumen diperbarui.');
+        } catch (err) {
+          showError(err.message || 'Gagal memperbarui status dokumen.');
+        } finally {
+          hideLoading();
+        }
+      });
+    });
+  }
+
+  if (el.dokumenAdminTabs) {
+    el.dokumenAdminTabs.querySelectorAll('.chip-tab').forEach(chip => {
+      chip.addEventListener('click', () => {
+        el.dokumenAdminTabs.querySelectorAll('.chip-tab').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        dokumenKategoriAktif = chip.dataset.kat || '';
+        renderDokumenAdmin();
+      });
+    });
+  }
+
+  if (el.formTambahDokumen) {
+    el.formTambahDokumen.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showLoading('Menambah dokumen...');
+      try {
+        const res = await apiPost('addDokumen', {
+          token: authToken,
+          judul: el.inputJudulDokumen.value.trim(),
+          deskripsi: el.inputDeskripsiDokumen.value.trim(),
+          kategori: el.selectKategoriDokumen.value,
+          url: el.inputUrlDokumen.value.trim()
+        });
+        cache.dokumenList.unshift({
+          id: res.id, judul: el.inputJudulDokumen.value.trim(), deskripsi: el.inputDeskripsiDokumen.value.trim(),
+          kategori: el.selectKategoriDokumen.value, url: el.inputUrlDokumen.value.trim(), status: 'AKTIF'
+        });
+        el.formTambahDokumen.reset();
+        renderDokumenAdmin();
+        showSuccess('Dokumen berhasil ditambahkan.');
+      } catch (err) {
+        showError(err.message || 'Gagal menambah dokumen.');
+      } finally {
+        hideLoading();
+      }
+    });
+  }
+
+  // ===== NOTIFIKASI =====
+  function renderNotifikasiAdmin() {
+    if (!cache.notifikasiList.length) {
+      el.listNotifikasiAdmin.innerHTML = '<div class="empty-state">Belum ada notifikasi baru.</div>';
+      return;
+    }
+    el.listNotifikasiAdmin.innerHTML = cache.notifikasiList.slice(0, 30).map(n => `
+      <div class="activity-item">
+        <span class="activity-item-icon ${notifTypeClass_(n.kategori)}">${notifIcon_(n.kategori)}</span>
+        <span class="activity-item-body">
+          <p class="activity-title">${escapeHtml(n.judul)} <span class="badge izin" style="margin-left:4px;">${escapeHtml(n.kategori)}</span></p>
+          <p class="activity-desc">${escapeHtml(n.isi)}</p>
+          <p class="activity-time">${escapeHtml(formatTanggalWaktuIndoShell(n.tanggal))} &middot; ${n.idRelawan === 'SEMUA' ? 'Semua Relawan' : n.idRelawan}</p>
+        </span>
+      </div>`).join('');
+  }
+
+  if (el.formTambahNotifikasi) {
+    el.formTambahNotifikasi.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showLoading('Mengirim notifikasi...');
+      try {
+        await apiPost('addNotifikasiSistem', {
+          token: authToken,
+          judul: el.inputJudulNotifikasi.value.trim(),
+          isi: el.inputIsiNotifikasi.value.trim(),
+          kategori: 'Sistem'
+        });
+        el.formTambahNotifikasi.reset();
+        const ulang = await apiGet('getNotifikasiListAdmin', { token: authToken });
+        cache.notifikasiList = ulang;
+        renderNotifikasiAdmin();
+        renderOverview();
+        showSuccess('Notifikasi terkirim ke semua relawan.');
+      } catch (err) {
+        showError(err.message || 'Gagal mengirim notifikasi.');
+      } finally {
+        hideLoading();
+      }
+    });
+  }
+
+  // ===== PENGUMUMAN =====
+  function renderPengumumanAdmin() {
+    if (!cache.pengumumanList.length) {
+      el.listPengumumanAdmin.innerHTML = '<div class="empty-state">Belum ada pengumuman yang dibuat.</div>';
+      return;
+    }
+    el.listPengumumanAdmin.innerHTML = cache.pengumumanList.map(p => `
+      <div class="info-card">
+        <p class="info-card-date">${escapeHtml(p.tanggalPublikasi)} &middot; ${p.target === 'SEMUA' ? 'Semua Relawan' : escapeHtml(p.target)}</p>
+        <h3 class="info-card-title">${escapeHtml(p.judul)}</h3>
+        <p class="info-card-body">${escapeHtml(p.isi)}</p>
+      </div>`).join('');
+  }
+
+  if (el.formPengumuman) {
+    el.formPengumuman.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showLoading('Mempublikasikan pengumuman...');
+      try {
+        await apiPost('addPengumuman', {
+          token: authToken,
+          judul: el.inputJudulPengumuman.value.trim(),
+          isi: el.inputIsiPengumuman.value.trim(),
+          target: el.selectTargetPengumuman.value,
+          tanggalPublikasi: el.inputJadwalPublikasi.value
+        });
+        el.formPengumuman.reset();
+        const [pengumumanUlang, informasiUlang, notifikasiUlang] = await Promise.all([
+          apiGet('getPengumumanListAdmin', { token: authToken }),
+          apiGet('getInformasiListAdmin', { token: authToken }),
+          apiGet('getNotifikasiListAdmin', { token: authToken })
+        ]);
+        cache.pengumumanList = pengumumanUlang;
+        cache.informasiList = informasiUlang;
+        cache.notifikasiList = notifikasiUlang;
+        renderPengumumanAdmin();
+        renderInformasiAdmin();
+        renderNotifikasiAdmin();
+        renderOverview();
+        showSuccess('Pengumuman berhasil dipublikasikan ke seluruh relawan.');
+      } catch (err) {
+        showError(err.message || 'Gagal membuat pengumuman.');
+      } finally {
+        hideLoading();
+      }
+    });
+  }
 })();
