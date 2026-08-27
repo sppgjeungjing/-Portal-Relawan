@@ -18,7 +18,8 @@
     jadwalList: [],         // untuk tab "Jadwal & Penugasan"
     dokumenList: [],          // untuk tab "Dokumen"
     notifikasiList: [],         // untuk tab "Notifikasi"
-    pengumumanList: []            // untuk tab "Pengumuman"
+    pengumumanList: [],           // untuk tab "Pengumuman"
+    errors: {}                       // { namaList: true } kalau load TERAKHIR gagal (beda dari data kosong)
   };
 
   const el = {
@@ -212,6 +213,25 @@
     }
   });
 
+  /**
+   * HTML untuk kondisi kosong: membedakan "memang belum ada data" (empty
+   * state biasa) dari "gagal dimuat karena error API/jaringan" (empty
+   * state + tombol Coba Lagi) — supaya pengguna tidak mengira data hilang
+   * padahal sebenarnya request-nya yang gagal.
+   */
+  function emptyOrErrorHtml(key, pesanKosong) {
+    if (cache.errors[key]) {
+      return `<div class="empty-state">Data belum dapat dimuat karena gangguan koneksi/server.
+        <button type="button" class="btn-mini" style="margin-left:8px;" onclick="muatUlangModulAdmin('${key}')">Coba Lagi</button></div>`;
+    }
+    return `<div class="empty-state">${pesanKosong}</div>`;
+  }
+
+  /** Sama seperti emptyOrErrorHtml, tapi dibungkus <tr><td colspan> untuk isi tbody tabel. */
+  function emptyOrErrorRow(key, colspan, pesanKosong) {
+    return `<tr><td colspan="${colspan}">${emptyOrErrorHtml(key, pesanKosong)}</td></tr>`;
+  }
+
   // ===== TABS =====
   el.tabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -223,51 +243,91 @@
   });
 
   // ===== INIT DASHBOARD =====
+  // Setiap sumber data dimuat SECARA TERPISAH (Promise.allSettled), supaya
+  // satu modul yang gagal (mis. Jadwal) tidak ikut mengosongkan modul lain
+  // yang datanya sebenarnya berhasil diambil (Relawan, Akun, dst).
+  const SUMBER_DASHBOARD = [
+    { key: 'divisiList', label: 'Divisi', fn: () => apiGet('getDivisi') },
+    { key: 'relawanList', label: 'Relawan', fn: () => apiGet('getRelawan', { semua: '1' }) },
+    { key: 'akunList', label: 'Akun Relawan', fn: () => apiGet('getAkunRelawanList', { token: authToken }) },
+    { key: 'informasiList', label: 'Informasi', fn: () => apiGet('getInformasiListAdmin', { token: authToken }) },
+    { key: 'jadwalList', label: 'Jadwal & Penugasan', fn: () => apiGet('getJadwalListAdmin', { token: authToken }) },
+    { key: 'dokumenList', label: 'Dokumen', fn: () => apiGet('getDokumenListAdmin', { token: authToken }) },
+    { key: 'notifikasiList', label: 'Notifikasi', fn: () => apiGet('getNotifikasiListAdmin', { token: authToken }) },
+    { key: 'pengumumanList', label: 'Pengumuman', fn: () => apiGet('getPengumumanListAdmin', { token: authToken }) }
+  ];
+  const RENDER_UNTUK_KEY = {
+    relawanList: () => { renderRelawanTable(); renderOverview(); },
+    divisiList: () => { fillDivisiSelects(); renderDivisiTable(); },
+    akunList: () => { renderAkunTable(); renderOverview(); },
+    informasiList: renderInformasiAdmin,
+    jadwalList: () => { fillRelawanJadwalSelect(); renderJadwalTable(); },
+    dokumenList: renderDokumenAdmin,
+    notifikasiList: () => { renderNotifikasiAdmin(); renderOverview(); },
+    pengumumanList: renderPengumumanAdmin
+  };
+
+  /** Muat ulang SATU sumber data saja (dipanggil dari tombol "Coba Lagi" di empty-state error). */
+  window.muatUlangModulAdmin = async function (key) {
+    const sumber = SUMBER_DASHBOARD.find(s => s.key === key);
+    if (!sumber) return;
+    try {
+      cache[key] = await sumber.fn();
+      cache.errors[key] = false;
+      showSuccess(sumber.label + ' berhasil dimuat ulang.');
+    } catch (err) {
+      cache.errors[key] = true;
+      showError(sumber.label + ' masih gagal dimuat: ' + (err.message || ''));
+    }
+    (RENDER_UNTUK_KEY[key] || function () {})();
+  };
+
   async function initDashboard() {
     showLoading('Memuat data dashboard...');
+    const sumber = SUMBER_DASHBOARD;
+
+    const hasil = await Promise.allSettled(sumber.map(s => s.fn()));
+    const gagalDimuat = [];
+    hasil.forEach((r, i) => {
+      const { key, label } = sumber[i];
+      if (r.status === 'fulfilled') {
+        cache[key] = r.value;
+        cache.errors[key] = false;
+      } else {
+        cache[key] = cache[key] || [];
+        cache.errors[key] = true;
+        gagalDimuat.push(label + ' (' + (r.reason && r.reason.message ? r.reason.message : 'gagal dimuat') + ')');
+      }
+    });
+
+    fillDivisiSelects();
+    fillRelawanJadwalSelect();
+    renderRelawanTable();
+    renderDivisiTable();
+    renderAkunTable();
+    renderInformasiAdmin();
+    renderJadwalTable();
+    renderDokumenAdmin();
+    renderNotifikasiAdmin();
+    renderPengumumanAdmin();
+    renderOverview();
+
+    const now = new Date();
+    el.filterTanggal.value = toDateInputValue(now);
+    const periodeDefault = defaultPeriodeDuaMinggu(now);
+    el.filterPeriodeAwal.value = toDateInputValue(periodeDefault.awal);
+    el.filterPeriodeAkhir.value = toDateInputValue(periodeDefault.akhir);
+    el.inputTanggalJadwal.value = toDateInputValue(now);
+
     try {
-      const [divisiList, relawanList, akunList, informasiList, jadwalList, dokumenList, notifikasiList, pengumumanList] = await Promise.all([
-        apiGet('getDivisi'),
-        apiGet('getRelawan', { semua: '1' }),
-        apiGet('getAkunRelawanList', { token: authToken }),
-        apiGet('getInformasiListAdmin', { token: authToken }),
-        apiGet('getJadwalListAdmin', { token: authToken }),
-        apiGet('getDokumenListAdmin', { token: authToken }),
-        apiGet('getNotifikasiListAdmin', { token: authToken }),
-        apiGet('getPengumumanListAdmin', { token: authToken })
-      ]);
-      cache.divisiList = divisiList;
-      cache.relawanList = relawanList;
-      cache.akunList = akunList;
-      cache.informasiList = informasiList;
-      cache.jadwalList = jadwalList;
-      cache.dokumenList = dokumenList;
-      cache.notifikasiList = notifikasiList;
-      cache.pengumumanList = pengumumanList;
-      fillDivisiSelects();
-      fillRelawanJadwalSelect();
-      renderRelawanTable();
-      renderDivisiTable();
-      renderAkunTable();
-      renderInformasiAdmin();
-      renderJadwalTable();
-      renderDokumenAdmin();
-      renderNotifikasiAdmin();
-      renderPengumumanAdmin();
-      renderOverview();
-
-      const now = new Date();
-      el.filterTanggal.value = toDateInputValue(now);
-      const periodeDefault = defaultPeriodeDuaMinggu(now);
-      el.filterPeriodeAwal.value = toDateInputValue(periodeDefault.awal);
-      el.filterPeriodeAkhir.value = toDateInputValue(periodeDefault.akhir);
-      el.inputTanggalJadwal.value = toDateInputValue(now);
-
       await muatRekapHarian();
     } catch (err) {
-      showError(err.message || 'Gagal memuat data dashboard.');
-    } finally {
-      hideLoading();
+      gagalDimuat.push('Rekap Harian (' + (err.message || 'gagal dimuat') + ')');
+    }
+
+    hideLoading();
+    if (gagalDimuat.length) {
+      showError('Sebagian data belum dapat dimuat — modul lain tetap tampil: ' + gagalDimuat.join('; '));
     }
   }
 
@@ -475,7 +535,7 @@
     if (status) rows = rows.filter(r => (r.status || 'AKTIF') === status);
 
     if (!rows.length) {
-      el.tbodyRelawan.innerHTML = `<tr><td colspan="5"><div class="empty-state">Tidak ada relawan yang cocok.</div></td></tr>`;
+      el.tbodyRelawan.innerHTML = emptyOrErrorRow('relawanList', 5, 'Tidak ada relawan yang cocok.');
       return;
     }
 
@@ -583,7 +643,7 @@
 
   function renderDivisiTable() {
     if (!cache.divisiList.length) {
-      el.tbodyDivisi.innerHTML = `<tr><td colspan="2"><div class="empty-state">Belum ada data divisi.</div></td></tr>`;
+      el.tbodyDivisi.innerHTML = emptyOrErrorRow('divisiList', 2, 'Belum ada data divisi.');
       return;
     }
     el.tbodyDivisi.innerHTML = cache.divisiList.map(d => {
@@ -659,7 +719,7 @@
     if (filterStatus === 'NONAKTIF') rows = rows.filter(r => akunById[r.id] && akunById[r.id].statusAkun === 'NONAKTIF');
 
     if (!rows.length) {
-      el.tbodyAkun.innerHTML = `<tr><td colspan="5"><div class="empty-state">Tidak ada relawan yang cocok.</div></td></tr>`;
+      el.tbodyAkun.innerHTML = emptyOrErrorRow('akunList', 5, 'Tidak ada relawan yang cocok.');
       return;
     }
 
@@ -778,7 +838,7 @@
 
   function renderInformasiAdmin() {
     if (!cache.informasiList.length) {
-      el.listInformasiAdmin.innerHTML = `<div class="empty-state">Belum ada informasi.</div>`;
+      el.listInformasiAdmin.innerHTML = emptyOrErrorHtml('informasiList', 'Belum ada informasi.');
       return;
     }
     el.listInformasiAdmin.innerHTML = cache.informasiList.map(i => `
@@ -870,7 +930,7 @@
 
   function renderJadwalTable() {
     if (!cache.jadwalList.length) {
-      el.tbodyJadwal.innerHTML = `<tr><td colspan="6"><div class="empty-state">Belum ada jadwal.</div></td></tr>`;
+      el.tbodyJadwal.innerHTML = emptyOrErrorRow('jadwalList', 6, 'Belum ada jadwal.');
       return;
     }
     el.tbodyJadwal.innerHTML = cache.jadwalList.map(j => `
@@ -943,6 +1003,10 @@
 
   function renderOverview() {
     if (!el.ovTotalRelawan) return;
+    const relawanGagal = cache.errors.relawanList;
+    const akunGagal = cache.errors.akunList;
+    const gagalTanda = '—'; // beda dari "0" — supaya tidak terbaca sebagai "memang nol"
+
     const totalRelawan = cache.relawanList.length;
     const relawanAktif = cache.relawanList.filter(r => (r.status || 'AKTIF') === 'AKTIF').length;
     const akunById = {};
@@ -955,12 +1019,12 @@
       else akunNonaktif++;
     });
 
-    el.ovTotalRelawan.textContent = totalRelawan;
-    el.ovRelawanAktif.textContent = relawanAktif;
-    el.ovAkunAktif.textContent = akunAktif;
-    el.ovBelumAkun.textContent = belumAkun;
-    el.ovAkunAktif2.textContent = akunAktif;
-    el.ovAkunNonaktif.textContent = akunNonaktif;
+    el.ovTotalRelawan.textContent = relawanGagal ? gagalTanda : totalRelawan;
+    el.ovRelawanAktif.textContent = relawanGagal ? gagalTanda : relawanAktif;
+    el.ovAkunAktif.textContent = (relawanGagal || akunGagal) ? gagalTanda : akunAktif;
+    el.ovBelumAkun.textContent = (relawanGagal || akunGagal) ? gagalTanda : belumAkun;
+    el.ovAkunAktif2.textContent = (relawanGagal || akunGagal) ? gagalTanda : akunAktif;
+    el.ovAkunNonaktif.textContent = (relawanGagal || akunGagal) ? gagalTanda : akunNonaktif;
 
     // "Notifikasi Baru" = notifikasi yang tercatat dalam 3 hari terakhir (data aktual, bukan statis).
     const batasWaktu = new Date();
@@ -969,11 +1033,11 @@
       const d = new Date(n.tanggal);
       return !isNaN(d.getTime()) && d >= batasWaktu;
     });
-    el.ovNotifikasiBaru.textContent = notifBaru.length;
+    el.ovNotifikasiBaru.textContent = cache.errors.notifikasiList ? gagalTanda : notifBaru.length;
 
     const aktivitas = cache.notifikasiList.slice(0, 6);
     if (!aktivitas.length) {
-      el.ovAktivitasList.innerHTML = '<div class="empty-state">Belum ada aktivitas terbaru.</div>';
+      el.ovAktivitasList.innerHTML = emptyOrErrorHtml('notifikasiList', 'Belum ada aktivitas terbaru.');
     } else {
       el.ovAktivitasList.innerHTML = aktivitas.map(n => `
         <div class="activity-item">
@@ -994,7 +1058,7 @@
     if (dokumenKategoriAktif) rows = rows.filter(d => d.kategori === dokumenKategoriAktif);
 
     if (!rows.length) {
-      el.listDokumenAdmin.innerHTML = '<div class="empty-state">Belum ada dokumen yang tersedia.</div>';
+      el.listDokumenAdmin.innerHTML = emptyOrErrorHtml('dokumenList', 'Belum ada dokumen yang tersedia.');
       return;
     }
     el.listDokumenAdmin.innerHTML = rows.map(d => `
@@ -1069,7 +1133,7 @@
   // ===== NOTIFIKASI =====
   function renderNotifikasiAdmin() {
     if (!cache.notifikasiList.length) {
-      el.listNotifikasiAdmin.innerHTML = '<div class="empty-state">Belum ada notifikasi baru.</div>';
+      el.listNotifikasiAdmin.innerHTML = emptyOrErrorHtml('notifikasiList', 'Belum ada notifikasi baru.');
       return;
     }
     el.listNotifikasiAdmin.innerHTML = cache.notifikasiList.slice(0, 30).map(n => `
@@ -1111,7 +1175,7 @@
   // ===== PENGUMUMAN =====
   function renderPengumumanAdmin() {
     if (!cache.pengumumanList.length) {
-      el.listPengumumanAdmin.innerHTML = '<div class="empty-state">Belum ada pengumuman yang dibuat.</div>';
+      el.listPengumumanAdmin.innerHTML = emptyOrErrorHtml('pengumumanList', 'Belum ada pengumuman yang dibuat.');
       return;
     }
     el.listPengumumanAdmin.innerHTML = cache.pengumumanList.map(p => `
