@@ -15,6 +15,8 @@
     rekapDuaMinggu: [],
     akunList: [],        // status akun relawan, untuk tab "Akun Relawan"
     informasiList: [],    // untuk tab "Informasi"
+    periodeList: [],       // untuk tab "Periode Kerja"
+    kalenderList: [],       // untuk tab "Kalender Operasional"
     jadwalList: [],         // untuk tab "Jadwal & Penugasan"
     dokumenList: [],          // untuk tab "Dokumen"
     notifikasiList: [],         // untuk tab "Notifikasi"
@@ -91,6 +93,24 @@
     inputJudulInformasi: document.getElementById('inputJudulInformasi'),
     inputIsiInformasi: document.getElementById('inputIsiInformasi'),
     listInformasiAdmin: document.getElementById('listInformasiAdmin'),
+
+    formTambahPeriode: document.getElementById('formTambahPeriode'),
+    inputNamaPeriode: document.getElementById('inputNamaPeriode'),
+    inputMulaiPeriode: document.getElementById('inputMulaiPeriode'),
+    inputSelesaiPeriode: document.getElementById('inputSelesaiPeriode'),
+    inputKeteranganPeriode: document.getElementById('inputKeteranganPeriode'),
+    tbodyPeriode: document.getElementById('tbodyPeriode'),
+
+    formGenerateKalender: document.getElementById('formGenerateKalender'),
+    selectPeriodeGenerate: document.getElementById('selectPeriodeGenerate'),
+    checkboxHariGrid: document.getElementById('checkboxHariGrid'),
+    inputKeteranganGenerate: document.getElementById('inputKeteranganGenerate'),
+    formTambahOperasional: document.getElementById('formTambahOperasional'),
+    selectPeriodeOperasional: document.getElementById('selectPeriodeOperasional'),
+    inputTanggalOperasional: document.getElementById('inputTanggalOperasional'),
+    inputKeteranganOperasional: document.getElementById('inputKeteranganOperasional'),
+    filterPeriodeKalender: document.getElementById('filterPeriodeKalender'),
+    tbodyKalender: document.getElementById('tbodyKalender'),
 
     formTambahJadwal: document.getElementById('formTambahJadwal'),
     inputTanggalJadwal: document.getElementById('inputTanggalJadwal'),
@@ -251,6 +271,8 @@
     { key: 'relawanList', label: 'Relawan', fn: () => apiGet('getRelawan', { semua: '1' }) },
     { key: 'akunList', label: 'Akun Relawan', fn: () => apiGet('getAkunRelawanList', { token: authToken }) },
     { key: 'informasiList', label: 'Informasi', fn: () => apiGet('getInformasiListAdmin', { token: authToken }) },
+    { key: 'periodeList', label: 'Periode Kerja', fn: () => apiGet('getPeriodeListAdmin', { token: authToken }) },
+    { key: 'kalenderList', label: 'Kalender Operasional', fn: () => apiGet('getKalenderListAdmin', { token: authToken }) },
     { key: 'jadwalList', label: 'Jadwal & Penugasan', fn: () => apiGet('getJadwalListAdmin', { token: authToken }) },
     { key: 'dokumenList', label: 'Dokumen', fn: () => apiGet('getDokumenListAdmin', { token: authToken }) },
     { key: 'notifikasiList', label: 'Notifikasi', fn: () => apiGet('getNotifikasiListAdmin', { token: authToken }) },
@@ -261,6 +283,8 @@
     divisiList: () => { fillDivisiSelects(); renderDivisiTable(); },
     akunList: () => { renderAkunTable(); renderOverview(); },
     informasiList: renderInformasiAdmin,
+    periodeList: () => { fillPeriodeSelects(); renderPeriodeTable(); },
+    kalenderList: renderKalenderTable,
     jadwalList: () => { fillRelawanJadwalSelect(); renderJadwalTable(); },
     dokumenList: renderDokumenAdmin,
     notifikasiList: () => { renderNotifikasiAdmin(); renderOverview(); },
@@ -302,10 +326,13 @@
 
     fillDivisiSelects();
     fillRelawanJadwalSelect();
+    fillPeriodeSelects();
     renderRelawanTable();
     renderDivisiTable();
     renderAkunTable();
     renderInformasiAdmin();
+    renderPeriodeTable();
+    renderKalenderTable();
     renderJadwalTable();
     renderDokumenAdmin();
     renderNotifikasiAdmin();
@@ -917,6 +944,200 @@
       showSuccess('Informasi berhasil ditambahkan.');
     } catch (err) {
       showError(err.message || 'Gagal menambah informasi.');
+    } finally {
+      hideLoading();
+    }
+  });
+
+  // ===== PERIODE KERJA (Fase 2) =====
+  function fillPeriodeSelects() {
+    const opts = '<option value="" disabled selected>Pilih Periode</option>' +
+      cache.periodeList.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.nama)} (${escapeHtml(p.status)})</option>`).join('');
+    el.selectPeriodeGenerate.innerHTML = opts;
+    el.selectPeriodeOperasional.innerHTML = opts;
+    el.filterPeriodeKalender.innerHTML = '<option value="">Semua Periode</option>' +
+      cache.periodeList.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.nama)}</option>`).join('');
+  }
+
+  async function muatUlangPeriode() {
+    cache.periodeList = await apiGet('getPeriodeListAdmin', { token: authToken });
+    fillPeriodeSelects();
+    renderPeriodeTable();
+  }
+
+  function renderPeriodeTable() {
+    if (!cache.periodeList.length) {
+      el.tbodyPeriode.innerHTML = emptyOrErrorRow('periodeList', 5, 'Belum ada periode kerja.');
+      return;
+    }
+    const opsiStatus = ['DRAFT', 'AKTIF', 'SELESAI', 'DITUTUP'];
+    el.tbodyPeriode.innerHTML = cache.periodeList.map(p => `
+      <tr data-id="${escapeHtml(p.id)}">
+        <td>${escapeHtml(p.nama)}${p.keterangan ? `<br><span style="font-size:11px;color:var(--color-text-muted);">${escapeHtml(p.keterangan)}</span>` : ''}</td>
+        <td>${escapeHtml(p.tanggalMulai)}</td>
+        <td>${escapeHtml(p.tanggalSelesai)}</td>
+        <td>
+          <select class="select-status-periode" style="font-size:12.5px;padding:4px 6px;border-radius:6px;border:1.5px solid var(--color-border);">
+            ${opsiStatus.map(s => `<option value="${s}" ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </td>
+        <td><a href="#" class="btn-mini btn-lihat-kalender-periode" data-id="${escapeHtml(p.id)}">Lihat Kalender</a></td>
+      </tr>`).join('');
+
+    el.tbodyPeriode.querySelectorAll('.select-status-periode').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        const id = sel.closest('tr').dataset.id;
+        const statusBaru = sel.value;
+        showLoading('Mengubah status periode...');
+        try {
+          await apiPost('updateStatusPeriode', { token: authToken, id, status: statusBaru });
+          await muatUlangPeriode();
+          showSuccess('Status periode diperbarui menjadi ' + statusBaru + '.');
+        } catch (err) {
+          showError(err.message || 'Gagal mengubah status periode.');
+          await muatUlangPeriode(); // kembalikan tampilan ke status sebenarnya di server
+        } finally {
+          hideLoading();
+        }
+      });
+    });
+
+    el.tbodyPeriode.querySelectorAll('.btn-lihat-kalender-periode').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = btn.dataset.id;
+        document.querySelector('[data-panel="panelKalender"]').click();
+        el.filterPeriodeKalender.value = id;
+        muatUlangKalender();
+      });
+    });
+  }
+
+  el.formTambahPeriode.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoading('Menambah periode...');
+    try {
+      await apiPost('addPeriode', {
+        token: authToken,
+        nama: el.inputNamaPeriode.value.trim(),
+        tanggalMulai: el.inputMulaiPeriode.value,
+        tanggalSelesai: el.inputSelesaiPeriode.value,
+        keterangan: el.inputKeteranganPeriode.value.trim()
+      });
+      el.formTambahPeriode.reset();
+      await muatUlangPeriode();
+      showSuccess('Periode berhasil ditambahkan (status DRAFT).');
+    } catch (err) {
+      showError(err.message || 'Gagal menambah periode.');
+    } finally {
+      hideLoading();
+    }
+  });
+
+  // ===== KALENDER OPERASIONAL (Fase 3) =====
+  async function muatUlangKalender() {
+    cache.kalenderList = await apiGet('getKalenderListAdmin', {
+      token: authToken,
+      idPeriode: el.filterPeriodeKalender.value || undefined
+    });
+    renderKalenderTable();
+  }
+
+  function renderKalenderTable() {
+    if (!cache.kalenderList.length) {
+      el.tbodyKalender.innerHTML = emptyOrErrorRow('kalenderList', 5, 'Belum ada tanggal operasional.');
+      return;
+    }
+    el.tbodyKalender.innerHTML = cache.kalenderList.map(k => `
+      <tr data-id="${escapeHtml(k.id)}">
+        <td>${escapeHtml(k.tanggal)}<br><span style="font-size:11px;color:var(--color-text-muted);">${escapeHtml(k.hari || '')}</span></td>
+        <td>${escapeHtml(k.namaPeriode)}</td>
+        <td><span class="badge ${k.status === 'AKTIF' ? 'aktif' : 'nonaktif'}">${escapeHtml(k.status)}</span></td>
+        <td>${escapeHtml(k.keterangan || '-')}</td>
+        <td>
+          <button type="button" class="btn-mini btn-toggle-operasional" data-status-baru="${k.status === 'AKTIF' ? 'DIBATALKAN' : 'AKTIF'}">${k.status === 'AKTIF' ? 'Batalkan' : 'Aktifkan'}</button>
+          <button type="button" class="btn-mini btn-hapus-operasional">Hapus</button>
+        </td>
+      </tr>`).join('');
+
+    el.tbodyKalender.querySelectorAll('.btn-toggle-operasional').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('tr').dataset.id;
+        const statusBaru = btn.dataset.statusBaru;
+        showLoading('Mengubah status...');
+        try {
+          await apiPost('updateStatusOperasional', { token: authToken, id, status: statusBaru });
+          await muatUlangKalender();
+        } catch (err) {
+          showError(err.message || 'Gagal mengubah status.');
+        } finally {
+          hideLoading();
+        }
+      });
+    });
+
+    el.tbodyKalender.querySelectorAll('.btn-hapus-operasional').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('tr').dataset.id;
+        if (!confirm('Hapus tanggal operasional ini? Tidak bisa dibatalkan.')) return;
+        showLoading('Menghapus...');
+        try {
+          await apiPost('deleteOperasional', { token: authToken, id });
+          await muatUlangKalender();
+        } catch (err) {
+          showError(err.message || 'Gagal menghapus.');
+        } finally {
+          hideLoading();
+        }
+      });
+    });
+  }
+
+  el.filterPeriodeKalender.addEventListener('change', () => {
+    muatUlangKalender().catch(err => showError(err.message || 'Gagal memuat kalender.'));
+  });
+
+  el.formGenerateKalender.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const hariAktif = Array.from(el.checkboxHariGrid.querySelectorAll('input:checked')).map(c => Number(c.value));
+    if (!el.selectPeriodeGenerate.value) { showError('Pilih periode terlebih dahulu.'); return; }
+    if (!hariAktif.length) { showError('Pilih minimal satu hari dalam minggu.'); return; }
+    showLoading('Membuat tanggal operasional...');
+    try {
+      const hasil = await apiPost('addOperasionalBulk', {
+        token: authToken,
+        idPeriode: el.selectPeriodeGenerate.value,
+        hariAktif: hariAktif,
+        keterangan: el.inputKeteranganGenerate.value.trim()
+      });
+      el.checkboxHariGrid.querySelectorAll('input:checked').forEach(c => { c.checked = false; });
+      el.inputKeteranganGenerate.value = '';
+      el.filterPeriodeKalender.value = el.selectPeriodeGenerate.value;
+      await muatUlangKalender();
+      showSuccess(`${hasil.ditambahkan} tanggal operasional dibuat` + (hasil.dilewati ? `, ${hasil.dilewati} dilewati (sudah ada).` : '.'));
+    } catch (err) {
+      showError(err.message || 'Gagal membuat tanggal operasional.');
+    } finally {
+      hideLoading();
+    }
+  });
+
+  el.formTambahOperasional.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoading('Menambah tanggal operasional...');
+    try {
+      await apiPost('addOperasional', {
+        token: authToken,
+        idPeriode: el.selectPeriodeOperasional.value,
+        tanggal: el.inputTanggalOperasional.value,
+        keterangan: el.inputKeteranganOperasional.value.trim()
+      });
+      el.formTambahOperasional.reset();
+      el.filterPeriodeKalender.value = el.selectPeriodeOperasional.value;
+      await muatUlangKalender();
+      showSuccess('Tanggal operasional ditambahkan.');
+    } catch (err) {
+      showError(err.message || 'Gagal menambah tanggal operasional.');
     } finally {
       hideLoading();
     }
