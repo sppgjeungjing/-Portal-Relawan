@@ -17,6 +17,7 @@
     informasiList: [],    // untuk tab "Informasi"
     periodeList: [],       // untuk tab "Periode Kerja"
     kalenderList: [],       // untuk tab "Kalender Operasional"
+    lokasiList: [],         // untuk tab "Master Lokasi SPPG"
     jadwalList: [],         // untuk tab "Jadwal & Penugasan"
     dokumenList: [],          // untuk tab "Dokumen"
     notifikasiList: [],         // untuk tab "Notifikasi"
@@ -111,6 +112,16 @@
     inputKeteranganOperasional: document.getElementById('inputKeteranganOperasional'),
     filterPeriodeKalender: document.getElementById('filterPeriodeKalender'),
     tbodyKalender: document.getElementById('tbodyKalender'),
+
+    formTambahLokasi: document.getElementById('formTambahLokasi'),
+    btnPakaiLokasiSaya: document.getElementById('btnPakaiLokasiSaya'),
+    inputNamaLokasi: document.getElementById('inputNamaLokasi'),
+    inputLatitudeLokasi: document.getElementById('inputLatitudeLokasi'),
+    inputLongitudeLokasi: document.getElementById('inputLongitudeLokasi'),
+    inputRadiusLokasi: document.getElementById('inputRadiusLokasi'),
+    inputJadikanAktifLokasi: document.getElementById('inputJadikanAktifLokasi'),
+    pesanLokasiGps: document.getElementById('pesanLokasiGps'),
+    tbodyLokasi: document.getElementById('tbodyLokasi'),
 
     formTambahJadwal: document.getElementById('formTambahJadwal'),
     inputTanggalJadwal: document.getElementById('inputTanggalJadwal'),
@@ -273,6 +284,7 @@
     { key: 'informasiList', label: 'Informasi', fn: () => apiGet('getInformasiListAdmin', { token: authToken }) },
     { key: 'periodeList', label: 'Periode Kerja', fn: () => apiGet('getPeriodeListAdmin', { token: authToken }) },
     { key: 'kalenderList', label: 'Kalender Operasional', fn: () => apiGet('getKalenderListAdmin', { token: authToken }) },
+    { key: 'lokasiList', label: 'Master Lokasi SPPG', fn: () => apiGet('getLokasiListAdmin', { token: authToken }) },
     { key: 'jadwalList', label: 'Jadwal & Penugasan', fn: () => apiGet('getJadwalListAdmin', { token: authToken }) },
     { key: 'dokumenList', label: 'Dokumen', fn: () => apiGet('getDokumenListAdmin', { token: authToken }) },
     { key: 'notifikasiList', label: 'Notifikasi', fn: () => apiGet('getNotifikasiListAdmin', { token: authToken }) },
@@ -285,6 +297,7 @@
     informasiList: renderInformasiAdmin,
     periodeList: () => { fillPeriodeSelects(); renderPeriodeTable(); },
     kalenderList: renderKalenderTable,
+    lokasiList: renderLokasiTable,
     jadwalList: () => { fillRelawanJadwalSelect(); renderJadwalTable(); },
     dokumenList: renderDokumenAdmin,
     notifikasiList: () => { renderNotifikasiAdmin(); renderOverview(); },
@@ -333,6 +346,7 @@
     renderInformasiAdmin();
     renderPeriodeTable();
     renderKalenderTable();
+    renderLokasiTable();
     renderJadwalTable();
     renderDokumenAdmin();
     renderNotifikasiAdmin();
@@ -1138,6 +1152,105 @@
       showSuccess('Tanggal operasional ditambahkan.');
     } catch (err) {
       showError(err.message || 'Gagal menambah tanggal operasional.');
+    } finally {
+      hideLoading();
+    }
+  });
+
+  // ===== MASTER LOKASI SPPG (Fase 4) =====
+  el.btnPakaiLokasiSaya.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      el.pesanLokasiGps.textContent = 'Perangkat/browser ini tidak mendukung GPS.';
+      return;
+    }
+    el.pesanLokasiGps.textContent = 'Mengambil lokasi Anda...';
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        el.inputLatitudeLokasi.value = pos.coords.latitude.toFixed(7);
+        el.inputLongitudeLokasi.value = pos.coords.longitude.toFixed(7);
+        el.pesanLokasiGps.textContent = `Lokasi terisi (akurasi ±${Math.round(pos.coords.accuracy)} meter). Periksa sebelum menyimpan.`;
+      },
+      (err) => {
+        el.pesanLokasiGps.textContent = 'Gagal mengambil lokasi: ' + (err.message || 'izin lokasi ditolak.');
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  });
+
+  async function muatUlangLokasi() {
+    cache.lokasiList = await apiGet('getLokasiListAdmin', { token: authToken });
+    renderLokasiTable();
+  }
+
+  function renderLokasiTable() {
+    if (!cache.lokasiList.length) {
+      el.tbodyLokasi.innerHTML = emptyOrErrorRow('lokasiList', 5, 'Belum ada lokasi SPPG terdaftar. Tambahkan titik referensi resmi di atas.');
+      return;
+    }
+    el.tbodyLokasi.innerHTML = cache.lokasiList.map(l => `
+      <tr data-id="${escapeHtml(l.id)}">
+        <td>${escapeHtml(l.nama)}</td>
+        <td style="font-size:12px;">${l.latitude}, ${l.longitude}</td>
+        <td>${l.radiusMeter} m</td>
+        <td><span class="badge ${l.statusAktif === 'AKTIF' ? 'aktif' : 'nonaktif'}">${escapeHtml(l.statusAktif)}</span></td>
+        <td>
+          ${l.statusAktif === 'AKTIF'
+            ? '<span style="font-size:11.5px;color:var(--color-text-muted);">Aktif saat ini</span>'
+            : `<button type="button" class="btn-mini btn-aktifkan-lokasi">Jadikan Aktif</button> <button type="button" class="btn-mini btn-hapus-lokasi">Hapus</button>`}
+        </td>
+      </tr>`).join('');
+
+    el.tbodyLokasi.querySelectorAll('.btn-aktifkan-lokasi').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('tr').dataset.id;
+        showLoading('Mengaktifkan lokasi...');
+        try {
+          await apiPost('updateStatusLokasiAktif', { token: authToken, id });
+          await muatUlangLokasi();
+          showSuccess('Lokasi ini sekarang menjadi referensi aktif.');
+        } catch (err) {
+          showError(err.message || 'Gagal mengaktifkan lokasi.');
+        } finally {
+          hideLoading();
+        }
+      });
+    });
+
+    el.tbodyLokasi.querySelectorAll('.btn-hapus-lokasi').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('tr').dataset.id;
+        if (!confirm('Hapus lokasi ini?')) return;
+        showLoading('Menghapus...');
+        try {
+          await apiPost('deleteLokasi', { token: authToken, id });
+          await muatUlangLokasi();
+        } catch (err) {
+          showError(err.message || 'Gagal menghapus.');
+        } finally {
+          hideLoading();
+        }
+      });
+    });
+  }
+
+  el.formTambahLokasi.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showLoading('Menyimpan lokasi...');
+    try {
+      await apiPost('addLokasi', {
+        token: authToken,
+        nama: el.inputNamaLokasi.value.trim(),
+        latitude: el.inputLatitudeLokasi.value,
+        longitude: el.inputLongitudeLokasi.value,
+        radiusMeter: el.inputRadiusLokasi.value,
+        jadikanAktif: el.inputJadikanAktifLokasi.checked
+      });
+      el.formTambahLokasi.reset();
+      el.pesanLokasiGps.textContent = '';
+      await muatUlangLokasi();
+      showSuccess('Lokasi berhasil disimpan.');
+    } catch (err) {
+      showError(err.message || 'Gagal menyimpan lokasi.');
     } finally {
       hideLoading();
     }

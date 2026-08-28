@@ -85,6 +85,7 @@
       <p class="shell-nav-group-title">Periode & Kalender</p>
       <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelPeriode"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span><span>Periode Kerja</span></button>
       <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelKalender"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M8 3v4"/><path d="M16 3v4"/><circle cx="8.5" cy="14.5" r="1.2"/><circle cx="12" cy="14.5" r="1.2"/><circle cx="15.5" cy="14.5" r="1.2"/></svg></span><span>Kalender Operasional</span></button>
+      <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelLokasi"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg></span><span>Master Lokasi SPPG</span></button>
       <p class="shell-nav-group-title">Jadwal & Penugasan</p>
       <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelJadwal"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span><span>Jadwal & Penugasan</span></button>
       <p class="shell-nav-group-title">Informasi & Komunikasi</p>
@@ -354,6 +355,34 @@
       <table>
         <thead><tr><th>Tanggal</th><th>Periode</th><th>Status</th><th>Keterangan</th><th>Aksi</th></tr></thead>
         <tbody id="tbodyKalender"><tr><td colspan="5"><div class="empty-state">Memuat data...</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MASTER LOKASI SPPG -->
+  <div class="admin-panel" id="panelLokasi">
+    <div class="shell-page-head">
+      <div class="shell-page-head-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg></div>
+      <div><h1 style="font-size:18px;margin:0;color:var(--color-navy);">Master Lokasi SPPG</h1><p style="font-size:13px;margin:2px 0 0;color:var(--color-text-muted);">Titik referensi resmi untuk validasi jarak absensi. Hanya satu lokasi yang aktif pada satu waktu.</p></div>
+    </div>
+    <p class="section-title">Tambah / Tetapkan Lokasi</p>
+    <form class="inline-form" id="formTambahLokasi" style="flex-direction:column;align-items:stretch;">
+      <input type="text" id="inputNamaLokasi" placeholder="Nama Lokasi (mis. SPPG Jeungjing)" required>
+      <button type="button" class="btn-mini" id="btnPakaiLokasiSaya" style="align-self:flex-start;">🎯 Gunakan Lokasi Saya Sekarang</button>
+      <div style="display:flex;gap:8px;">
+        <input type="number" step="0.0000001" id="inputLatitudeLokasi" placeholder="Latitude" required style="flex:1;">
+        <input type="number" step="0.0000001" id="inputLongitudeLokasi" placeholder="Longitude" required style="flex:1;">
+      </div>
+      <input type="number" id="inputRadiusLokasi" placeholder="Radius Toleransi (meter)" required min="1">
+      <label style="font-size:13px;display:flex;align-items:center;gap:6px;"><input type="checkbox" id="inputJadikanAktifLokasi"> Jadikan lokasi aktif sekarang</label>
+      <button type="submit" class="btn-mini primary">+ Simpan Lokasi</button>
+    </form>
+    <p id="pesanLokasiGps" style="font-size:12.5px;color:var(--color-text-muted);margin:-4px 0 10px;"></p>
+    <p class="section-title">Daftar Lokasi</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nama</th><th>Koordinat</th><th>Radius</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="tbodyLokasi"><tr><td colspan="5"><div class="empty-state">Memuat data...</div></td></tr></tbody>
       </table>
     </div>
   </div>
