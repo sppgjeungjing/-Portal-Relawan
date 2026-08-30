@@ -77,10 +77,11 @@ function escapeHtml(str) {
 /** Waktu maksimal menunggu respons server sebelum dianggap gagal (ms). */
 const API_TIMEOUT_MS = 20000;
 
-/** Bikin fetch dengan batas waktu, supaya loading tidak berputar tanpa akhir. */
-function fetchDenganTimeout_(url, options) {
+/** Bikin fetch dengan batas waktu, supaya loading tidak berputar tanpa akhir.
+ * @param {number} [timeoutMs] override timeout default, dipakai submitAbsensi (upload foto lebih lambat). */
+function fetchDenganTimeout_(url, options, timeoutMs) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs || API_TIMEOUT_MS);
   return fetch(url, Object.assign({}, options, { signal: controller.signal })).finally(() => clearTimeout(timer));
 }
 
@@ -142,8 +143,9 @@ async function apiGet(action, params, _attempt) {
  * di server tetapi responsnya yang terlambat/hilang.
  * @param {string} action nama aksi, mis. "submitAbsensi"
  * @param {object} [payload] data yang dikirim
+ * @param {number} [timeoutMs] override timeout default (mis. upload foto perlu lebih lama)
  */
-async function apiPost(action, payload) {
+async function apiPost(action, payload, timeoutMs) {
   if (!action) throw new Error('API action belum ditentukan (kesalahan pada kode halaman).');
   if (!GOOGLE_APPS_SCRIPT_WEB_APP_URL || GOOGLE_APPS_SCRIPT_WEB_APP_URL === 'GOOGLE_APPS_SCRIPT_WEB_APP_URL') {
     throw new Error('Website belum terhubung ke server. Admin perlu mengisi config.js terlebih dahulu.');
@@ -160,7 +162,7 @@ async function apiPost(action, payload) {
       // sebagai "simple request" (text/plain) yang lolos tanpa preflight.
       // Di sisi server (Code.gs), body ini tetap di-parse sebagai JSON biasa.
       body: JSON.stringify(Object.assign({}, payload, { action }))
-    });
+    }, timeoutMs);
   } catch (err) {
     logDebug_('ERROR', action, err.name);
     if (err.name === 'AbortError') throw new Error('Server tidak merespons. Data mungkin belum tersimpan — periksa kembali sebelum mengulang.');

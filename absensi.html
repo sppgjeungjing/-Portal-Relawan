@@ -2,170 +2,188 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SPPG Jeungjing — Absensi Relawan</title>
-<meta name="description" content="Sistem Absensi Relawan SPPG Jeungjing">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absensi — SPPG Jeungjing</title>
+<meta name="description" content="Absensi Relawan SPPG Jeungjing — Selfie & GPS">
 <link rel="icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="app-shell.css">
 </head>
 <body>
-<div class="page-shell">
-
-  <!-- Latar dekoratif: sky-blue glow, blob lembut, dot pattern tipis. Presentasional saja. -->
-  <div class="bg-decor" aria-hidden="true">
-    <div class="blob blob--sky-top"></div>
-    <div class="blob blob--gold-left"></div>
-    <div class="blob blob--sky-bottom"></div>
-    <div class="dots"></div>
-  </div>
-
-  <header class="site-header">
-    <div class="header-inner">
-      <div class="header-brand">
-        <img src="assets/logo.png" alt="Logo SPPG Jeungjing" class="header-logo">
-        <div class="header-text">
-          <h1>SPPG JEUNGJING</h1>
-          <p>Sistem Absensi Relawan</p>
-        </div>
+<div class="shell">
+  <div class="shell-body">
+  <div class="shell-overlay" id="shellOverlay"></div>
+  <aside class="shell-sidebar" id="shellSidebar">
+    <div class="shell-sidebar-head">
+      <img src="assets/logo.png" alt="Logo SPPG Jeungjing">
+      <div class="shell-sidebar-head-text">
+        <strong>SPPG JEUNGJING</strong>
+        <span>Portal Relawan</span>
       </div>
-      <img src="assets/logo-bgn.png" alt="Logo Badan Gizi Nasional" class="header-logo header-logo--bgn">
+      <button type="button" class="shell-sidebar-close" id="shellSidebarClose" aria-label="Tutup menu"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+    </div>
+    <div class="shell-sidebar-user" id="shellSidebarUser">
+      <div class="shell-sidebar-user-avatar" id="sidebarAvatar">–</div>
+      <div class="shell-sidebar-user-text">
+        <strong id="sidebarNama">Memuat...</strong>
+        <span class="shell-sidebar-user-status" id="sidebarStatus"></span>
+      </div>
+    </div>
+    <nav class="shell-nav" aria-label="Menu Portal Relawan">
+    <p class="shell-nav-group-title">Utama</p>
+    <a href="dashboard.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg></span><span>Dashboard</span></a>
+    <a href="profil.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg></span><span>Profil Saya</span></a>
+    <p class="shell-nav-group-title">Absensi</p>
+    <a href="absensi.html" class="shell-nav-link active"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M9 12l2 2 4-4"/></svg></span><span>Absensi Masuk / Pulang</span></a>
+    <a href="riwayat.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span><span>Riwayat Absensi</span></a>
+    <p class="shell-nav-group-title">Aktivitas</p>
+    <a href="jadwal.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span><span>Jadwal & Penugasan</span></a>
+    <a href="notifikasi.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21h4"/></svg></span><span>Notifikasi</span></a>
+    <a href="informasi.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg></span><span>Informasi</span></a>
+    <p class="shell-nav-group-title">Akun & Lainnya</p>
+    <a href="pengaturan.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg></span><span>Pengaturan Akun</span></a>
+    <a href="dokumen.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span><span>Dokumen & Panduan</span></a>
+    <a href="bantuan.html" class="shell-nav-link"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.9.4-1.5 1-1.5 2.2"/><path d="M12 17v.01"/></svg></span><span>Bantuan</span></a>
+    </nav>
+    <button type="button" class="shell-nav-link shell-nav-link--danger" id="btnLogoutShell" style="margin:0 10px 8px;width:calc(100% - 20px);"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span><span>Keluar</span></button>
+    <button type="button" class="shell-sidebar-collapse-toggle" id="shellCollapseToggle"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg> Ciutkan Menu</button>
+    <div class="shell-sidebar-foot">SPPG JEUNGJING · Portal Relawan<br>Kp. Kecok, RT.004, Ds. Jeungjing, Kec. Cisoka, Kab. Tangerang - Banten, 15730</div>
+  </aside>
+    <div class="shell-main">
+  <header class="shell-topbar">
+    <button type="button" class="shell-topbar-burger" aria-label="Buka menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
+    <div class="shell-topbar-brand">
+      <img src="assets/logo.png" alt="Logo SPPG Jeungjing">
+      <div class="shell-topbar-brand-text">
+        <strong>SPPG JEUNGJING</strong>
+        <span>Portal Relawan</span>
+      </div>
+    </div>
+    <div class="shell-topbar-right">
+      <a href="notifikasi.html" class="shell-topbar-bell" aria-label="Notifikasi" id="topbarBell">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21h4"/></svg>
+        <span class="shell-topbar-bell-count is-hidden" id="topbarBellCount">0</span>
+      </a>
+      <div class="shell-topbar-avatar" id="topbarAvatar">–</div>
     </div>
   </header>
-
-  <div class="layout-split">
-
-    <!-- Kolom kiri: branding, hanya tampil di desktop (lihat style.css) -->
-    <aside class="brand-panel" aria-hidden="true">
-      <div class="brand-blob brand-blob--1"></div>
-      <div class="brand-blob brand-blob--2"></div>
-      <div class="brand-dots"></div>
-      <div class="brand-panel-content">
-        <div class="brand-badges">
-          <img src="assets/logo.png" alt="" class="brand-badge-logo">
-          <span class="brand-badge-divider"></span>
-          <img src="assets/logo-bgn.png" alt="" class="brand-badge-logo">
-        </div>
-        <p class="brand-eyebrow">Program Makan Bergizi Gratis</p>
-        <h2 class="brand-heading">Melayani dengan Gizi,<br>Mengabdi dengan Hati.</h2>
-        <p class="brand-desc">SPPG Jeungjing adalah dapur pelayanan di bawah Badan Gizi Nasional yang mendukung pemenuhan gizi anak Indonesia. Sistem ini membantu mencatat kehadiran relawan secara cepat, tertib, dan akurat.</p>
-        <ul class="brand-points">
-          <li>Cepat &amp; mudah digunakan dari HP</li>
-          <li>Data tercatat otomatis &amp; aman</li>
-          <li>Mendukung operasional dapur SPPG</li>
-        </ul>
-      </div>
-    </aside>
-
-    <!-- Kolom kanan (mobile: satu-satunya kolom) — KONTEN FORM TIDAK DIUBAH -->
-    <main class="container">
-
-      <section class="welcome-card">
-        <p class="welcome-greeting">Selamat Datang di Sistem Absensi Relawan SPPG Jeungjing 👋</p>
-        <p>Gunakan sistem ini untuk mencatat kehadiran dengan lebih mudah, cepat, dan tertib.</p>
-        <details class="welcome-steps">
-          <summary>Cara melakukan absensi</summary>
-          <ol>
-            <li>Pilih Divisi Anda.</li>
-            <li>Pilih Nama Anda.</li>
-            <li>Pilih Jenis Absensi.</li>
-            <li>Isi Keterangan jika diperlukan.</li>
-            <li>Tekan Kirim Absensi.</li>
-          </ol>
-          <p class="welcome-note">Mohon selalu melakukan absensi setiap datang dan pulang agar data kehadiran tetap tertib dan terdata dengan baik. Terima kasih atas kedisiplinan dan kerja sama seluruh relawan SPPG Jeungjing.</p>
-        </details>
-      </section>
-
-      <div class="progress-steps" id="progressSteps">
-        <div class="step active" data-step="1"><span>1</span>Divisi</div>
-        <div class="step" data-step="2"><span>2</span>Nama</div>
-        <div class="step" data-step="3"><span>3</span>Jenis</div>
-        <div class="step" data-step="4"><span>4</span>Kirim</div>
-      </div>
-
-      <form id="absensiForm" class="absensi-form" novalidate>
-
-        <div class="form-card" id="cardDivisi">
-          <label for="selectDivisi" class="form-label">1. Pilih Divisi</label>
-          <select id="selectDivisi" class="form-select" required>
-            <option value="" disabled selected>Memuat data divisi...</option>
-          </select>
-        </div>
-
-        <div class="form-card is-disabled" id="cardNama">
-          <label for="selectNama" class="form-label">2. Pilih Nama Relawan</label>
-          <select id="selectNama" class="form-select" required disabled>
-            <option value="" disabled selected>Tentukan divisi terlebih dahulu.</option>
-          </select>
-        </div>
-
-        <div class="form-card is-disabled" id="cardJenis">
-          <span class="form-label">3. Jenis Absensi</span>
-          <div class="jenis-options">
-            <button type="button" class="jenis-btn" data-jenis="MASUK" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
-              MASUK
-            </button>
-            <button type="button" class="jenis-btn" data-jenis="PULANG" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M14 7l-5 5 5 5"/><path d="M9 12h12"/></svg>
-              PULANG
-            </button>
-          </div>
-        </div>
-
-        <div class="form-card" id="cardKeterangan">
-          <label for="selectKeterangan" class="form-label">4. Keterangan <span class="optional-tag">(opsional)</span></label>
-          <select id="selectKeterangan" class="form-select">
-            <option value="">Hadir (tidak perlu diisi)</option>
-            <option value="Izin">Izin</option>
-            <option value="Sakit">Sakit</option>
-            <option value="Dinas">Dinas</option>
-            <option value="Lainnya">Lainnya</option>
-          </select>
-          <textarea id="textKeteranganLain" class="form-textarea is-hidden" placeholder="Tuliskan keterangan Anda..." maxlength="200"></textarea>
-        </div>
-
-        <button type="submit" id="btnSubmit" class="btn-submit" disabled>Kirim Absensi</button>
-      </form>
-    </main>
-  </div>
-
-  <!-- Modal Sukses -->
-  <div class="modal-overlay is-hidden" id="successModal" role="dialog" aria-modal="true" aria-labelledby="successTitle">
-    <div class="modal-card">
-      <div class="stamp-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-      </div>
-      <h2 id="successTitle">Absensi Berhasil</h2>
-      <p id="successMessage">Terima kasih, <strong></strong>. Kehadiran Anda telah tercatat.</p>
-      <dl class="modal-details" id="successDetails"></dl>
-      <button type="button" class="btn-secondary" id="btnKembali">Kembali ke Absensi</button>
+      <main class="shell-content">
+<a href="dashboard.html" class="shell-back"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg> Kembali</a>
+  <div class="shell-page-head">
+    <div class="shell-page-head-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M9 12l2 2 4-4"/></svg></div>
+    <div>
+      <h1>Absensi</h1>
+      <p>Catat kehadiran dengan verifikasi swafoto dan lokasi GPS.</p>
     </div>
   </div>
 
-  <!-- Toast Error -->
-  <div class="toast is-hidden" id="errorToast" role="alert"></div>
+  <div id="absensiMain" style="display:none;">
 
-  <!-- Loading -->
-  <div class="loading-overlay is-hidden" id="loadingOverlay">
-    <div class="spinner"></div>
-    <p id="loadingText">Memuat data...</p>
+    <div class="auth-card absensi-card">
+      <div class="absensi-identity">
+        <div class="absensi-identity-avatar" id="absensiAvatar">–</div>
+        <div class="absensi-identity-text">
+          <strong id="absensiNama">–</strong>
+          <span id="absensiDivisiId">–</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATE: tidak ada operasional aktif -->
+    <div class="auth-card absensi-card" id="stateKosong" style="display:none;">
+      <div class="absensi-empty">
+        <p id="pesanKosong">Belum ada operasional aktif untuk absensi hari ini. Hubungi admin.</p>
+      </div>
+    </div>
+
+    <!-- STATE: ringkasan Masuk (tampil di atas form Pulang) -->
+    <div class="auth-card absensi-card" id="ringkasanMasuk" style="display:none;">
+      <p class="absensi-section-title" style="margin-top:0;">Sudah Absen Masuk</p>
+      <div class="profile-identity-list">
+        <div class="profile-identity-row"><span>Jam Masuk</span><span id="ringkasanJamMasuk">–</span></div>
+        <div class="profile-identity-row"><span>Status Lokasi</span><span id="ringkasanZonaMasuk">–</span></div>
+      </div>
+    </div>
+
+    <!-- STATE: form presensi (Masuk / Pulang) -->
+    <div id="stateForm" style="display:none;">
+      <div class="auth-card absensi-card">
+        <span class="absensi-jenis-label" id="labelJenis">PRESENSI MASUK</span>
+        <h2 style="margin:2px 0 2px;font-size:16px;color:var(--color-navy);" id="judulForm">Presensi Masuk</h2>
+        <p class="auth-sub" style="margin-bottom:14px;">Catat kehadiran dengan verifikasi swafoto dan lokasi GPS.</p>
+
+        <p class="absensi-section-title" style="margin-top:0;">Verifikasi Swafoto</p>
+        <div class="absensi-camera-box" id="cameraBox">
+          <div class="absensi-camera-placeholder" id="cameraPlaceholder">📷<br>Menyiapkan kamera…</div>
+          <video id="videoLive" autoplay playsinline muted style="display:none;"></video>
+          <img id="fotoPreview" style="display:none;" alt="Swafoto">
+        </div>
+        <div class="absensi-camera-actions">
+          <button type="button" class="btn-outline" id="btnAmbilFoto" disabled>📷 Ambil Swafoto</button>
+          <button type="button" class="btn-outline" id="btnUlangFoto" style="display:none;">↺ Ambil Ulang</button>
+        </div>
+        <canvas id="canvasCapture" style="display:none;"></canvas>
+
+        <p class="absensi-section-title">Lokasi</p>
+        <div class="absensi-gps-row" id="gpsRow">📍 Mengambil lokasi Anda…</div>
+        <div id="zonaBadgeWrap"></div>
+
+        <p class="absensi-section-title">Keterangan <span style="font-weight:400;text-transform:none;">(opsional)</span></p>
+        <textarea id="inputKeteranganAbsen" class="absensi-textarea" placeholder="Catatan tambahan (opsional)" maxlength="200"></textarea>
+
+        <button type="button" class="btn-submit" id="btnKirimAbsen" disabled style="margin-top:16px;">Kirim Absensi</button>
+      </div>
+
+      <button type="button" class="absensi-izin-link" id="btnBukaIzin" style="display:none;">Tidak bisa hadir? Ajukan Izin / Sakit</button>
+    </div>
+
+    <!-- STATE: selesai / detail -->
+    <div class="auth-card absensi-card" id="stateSelesai" style="display:none;">
+      <p class="absensi-section-title" style="margin-top:0;">Detail Presensi</p>
+      <div class="profile-identity-list" id="detailInfoList"></div>
+      <div class="absensi-detail-photos" id="detailFotoWrap"></div>
+    </div>
+
+    <!-- Panel Ajukan Izin/Sakit -->
+    <div class="auth-card absensi-card" id="panelIzinSakit" style="display:none;">
+      <p class="absensi-section-title" style="margin-top:0;">Ajukan Izin / Sakit</p>
+      <div class="absensi-camera-actions" style="margin-bottom:12px;">
+        <button type="button" class="absensi-pill-choice" id="btnPilihIzin" data-jenis="Izin">Izin</button>
+        <button type="button" class="absensi-pill-choice" id="btnPilihSakit" data-jenis="Sakit">Sakit</button>
+      </div>
+      <textarea id="inputKeteranganIzin" class="absensi-textarea" placeholder="Jelaskan alasan Anda (wajib diisi)" maxlength="200"></textarea>
+      <div class="absensi-camera-actions" style="margin-top:12px;">
+        <button type="button" class="btn-outline" id="btnBatalIzin">Batal</button>
+        <button type="button" class="btn-submit" id="btnKirimIzin" disabled>Kirim Pengajuan</button>
+      </div>
+    </div>
+
   </div>
 
-  <footer class="site-footer">
-    <p><strong>SPPG JEUNGJING</strong> · Sistem Absensi Relawan</p>
-    <p>Digunakan untuk mendukung pencatatan kehadiran relawan secara tertib dan terorganisir.</p>
-    <a href="index.html" class="admin-link">← Kembali ke Portal</a>
-    <a href="admin.html" class="admin-link">Admin</a>
+        <div class="toast is-hidden" id="errorToast" role="alert"></div>
+        <div class="loading-overlay is-hidden" id="loadingOverlay">
+          <div class="spinner"></div>
+          <p id="loadingText">Memuat data...</p>
+        </div>
+      </main>
+  <footer class="shell-footer">
+    <p><strong>SPPG JEUNGJING</strong> · Portal Relawan</p>
+    <p>Kp. Kecok, RT.004, Ds. Jeungjing, Kec. Cisoka, Kab. Tangerang - Banten, 15730</p>
     <p class="credit">© 2026 SPPG Jeungjing · Developed by Fatur Rizky Fahriansyah</p>
   </footer>
-
+    </div>
+  </div>
 </div>
 
 <script src="config.js"></script>
 <script src="common.js"></script>
+<script src="auth-relawan.js"></script>
+<script src="app-shell.js"></script>
 <script src="script.js"></script>
+<script>document.addEventListener("DOMContentLoaded", bootRelawanShell);</script>
 </body>
 </html>
