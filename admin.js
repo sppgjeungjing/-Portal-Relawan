@@ -111,6 +111,7 @@
     inputTanggalOperasional: document.getElementById('inputTanggalOperasional'),
     inputKeteranganOperasional: document.getElementById('inputKeteranganOperasional'),
     filterPeriodeKalender: document.getElementById('filterPeriodeKalender'),
+    btnHapusSemuaKalender: document.getElementById('btnHapusSemuaKalender'),
     tbodyKalender: document.getElementById('tbodyKalender'),
 
     formTambahLokasi: document.getElementById('formTambahLokasi'),
@@ -1122,6 +1123,26 @@
 
   el.filterPeriodeKalender.addEventListener('change', () => {
     muatUlangKalender().catch(err => showError(err.message || 'Gagal memuat kalender.'));
+  });
+
+  el.btnHapusSemuaKalender.addEventListener('click', async () => {
+    const idPeriode = el.filterPeriodeKalender.value;
+    if (!idPeriode) {
+      showError('Pilih satu periode dulu di dropdown sebelum menghapus semua tanggalnya.');
+      return;
+    }
+    const namaPeriode = el.filterPeriodeKalender.options[el.filterPeriodeKalender.selectedIndex].textContent;
+    if (!confirm(`Hapus SEMUA tanggal operasional pada "${namaPeriode}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+    showLoading('Menghapus semua tanggal...');
+    try {
+      const hasil = await apiPost('hapusSemuaOperasionalPeriode', { token: authToken, idPeriode });
+      await muatUlangKalender();
+      showSuccess(`${hasil.dihapus} tanggal operasional dihapus.`);
+    } catch (err) {
+      showError(err.message || 'Gagal menghapus.');
+    } finally {
+      hideLoading();
+    }
   });
 
   el.formGenerateKalender.addEventListener('submit', async (e) => {

@@ -350,7 +350,10 @@
     </form>
 
     <p class="section-title">Daftar Tanggal Operasional</p>
-    <select id="filterPeriodeKalender" style="margin-bottom:10px;"><option value="">Semua Periode</option></select>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+      <select id="filterPeriodeKalender" style="flex:1;min-width:160px;"><option value="">Semua Periode</option></select>
+      <button type="button" class="btn-mini" id="btnHapusSemuaKalender" style="background:var(--color-danger-bg);color:var(--color-danger);border-color:var(--color-danger);">🗑 Hapus Semua (periode terpilih)</button>
+    </div>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Tanggal</th><th>Periode</th><th>Status</th><th>Keterangan</th><th>Aksi</th></tr></thead>
