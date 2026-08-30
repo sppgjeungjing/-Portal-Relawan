@@ -458,7 +458,7 @@
     if (status) rows = rows.filter(r => r.status === status);
 
     if (!rows.length) {
-      el.tbodyHarian.innerHTML = `<tr><td colspan="7"><div class="empty-state">Belum ada data kehadiran.</div></td></tr>`;
+      el.tbodyHarian.innerHTML = `<tr><td colspan="10"><div class="empty-state">Belum ada data kehadiran.</div></td></tr>`;
       return;
     }
     el.tbodyHarian.innerHTML = rows.map((r, i) => `
@@ -470,7 +470,17 @@
         <td>${escapeHtml(r.jamPulang || '–')}</td>
         <td>${statusBadge(r.status)}</td>
         <td>${escapeHtml(r.keterangan || '–')}</td>
+        <td style="font-size:12px;">${escapeHtml(r.lokasiMasuk || '–')}</td>
+        <td style="font-size:12px;">${escapeHtml(r.lokasiPulang || '–')}</td>
+        <td>${buktiFotoCell_(r)}</td>
       </tr>`).join('');
+  }
+
+  function buktiFotoCell_(r) {
+    const tautan = [];
+    if (r.fotoMasukUrl) tautan.push(`<a href="${escapeHtml(r.fotoMasukUrl)}" target="_blank" rel="noopener" class="btn-mini" style="font-size:11px;">🖼 Masuk</a>`);
+    if (r.fotoPulangUrl) tautan.push(`<a href="${escapeHtml(r.fotoPulangUrl)}" target="_blank" rel="noopener" class="btn-mini" style="font-size:11px;">🖼 Pulang</a>`);
+    return tautan.length ? tautan.join(' ') : '–';
   }
 
   el.filterDivisiHarian.addEventListener('change', () => cache.rekapHarian.length && renderRekapHarianTable());
@@ -483,8 +493,11 @@
 
   el.btnExportHarian.addEventListener('click', () => {
     if (!cache.rekapHarian.length) { showError('Tidak ada data untuk diexport.'); return; }
-    const rows = [['No', 'Nama', 'Divisi', 'Jam Masuk', 'Jam Pulang', 'Status', 'Keterangan']];
-    cache.rekapHarian.forEach((r, i) => rows.push([i + 1, r.nama, r.divisi, r.jamMasuk, r.jamPulang, r.status, r.keterangan]));
+    const rows = [['No', 'Nama', 'Divisi', 'Jam Masuk', 'Jam Pulang', 'Status', 'Keterangan', 'Lokasi Masuk', 'Lokasi Pulang', 'Foto Masuk', 'Foto Pulang']];
+    cache.rekapHarian.forEach((r, i) => rows.push([
+      i + 1, r.nama, r.divisi, r.jamMasuk, r.jamPulang, r.status, r.keterangan,
+      r.lokasiMasuk || '', r.lokasiPulang || '', r.fotoMasukUrl || '', r.fotoPulangUrl || ''
+    ]));
     downloadCsv(rows, `rekap-harian-${el.filterTanggal.value}.csv`);
   });
 
