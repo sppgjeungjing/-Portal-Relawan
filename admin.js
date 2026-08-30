@@ -1009,7 +1009,10 @@
             ${opsiStatus.map(s => `<option value="${s}" ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}
           </select>
         </td>
-        <td><a href="#" class="btn-mini btn-lihat-kalender-periode" data-id="${escapeHtml(p.id)}">Lihat Kalender</a></td>
+        <td>
+          <a href="#" class="btn-mini btn-lihat-kalender-periode" data-id="${escapeHtml(p.id)}">Lihat Kalender</a>
+          <button type="button" class="btn-mini btn-hapus-periode" data-id="${escapeHtml(p.id)}" style="background:var(--color-danger-bg);color:var(--color-danger);border-color:var(--color-danger);">Hapus</button>
+        </td>
       </tr>`).join('');
 
     el.tbodyPeriode.querySelectorAll('.select-status-periode').forEach(sel => {
@@ -1037,6 +1040,24 @@
         document.querySelector('[data-panel="panelKalender"]').click();
         el.filterPeriodeKalender.value = id;
         muatUlangKalender();
+      });
+    });
+
+    el.tbodyPeriode.querySelectorAll('.btn-hapus-periode').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const nama = btn.closest('tr').querySelector('td').textContent.trim();
+        if (!confirm(`Hapus periode "${nama}"? Hanya bisa dihapus kalau belum ada tanggal operasional di dalamnya.`)) return;
+        showLoading('Menghapus periode...');
+        try {
+          await apiPost('deletePeriode', { token: authToken, id });
+          await muatUlangPeriode();
+          showSuccess('Periode dihapus.');
+        } catch (err) {
+          showError(err.message || 'Gagal menghapus periode.');
+        } finally {
+          hideLoading();
+        }
       });
     });
   }
