@@ -15,8 +15,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   const main = document.getElementById('notifMain');
   const list = document.getElementById('notifList');
   const tabs = document.querySelectorAll('#notifTabs .chip-tab');
+  const detailOverlay = document.getElementById('notifDetailOverlay');
+  const detailIcon = document.getElementById('notifDetailIcon');
+  const detailJudul = document.getElementById('notifDetailJudul');
+  const detailTanggal = document.getElementById('notifDetailTanggal');
+  const detailIsi = document.getElementById('notifDetailIsi');
   let items = [];
   let kategoriAktif = 'semua';
+
+  function bukaDetail(item) {
+    detailIcon.className = 'activity-item-icon ' + typeClass(item.kategori);
+    detailIcon.innerHTML = iconFor(item.kategori);
+    detailJudul.textContent = item.judul;
+    detailTanggal.textContent = formatTanggalWaktuIndoShell(item.tanggal);
+    detailIsi.textContent = item.isi;
+    detailOverlay.classList.remove('is-hidden');
+  }
+
+  function tutupDetail() {
+    detailOverlay.classList.add('is-hidden');
+  }
+
+  document.getElementById('btnTutupNotifDetail').addEventListener('click', tutupDetail);
+  detailOverlay.addEventListener('click', (e) => { if (e.target === detailOverlay) tutupDetail(); });
 
   function iconFor(kategori) {
     if (kategori === 'Informasi') return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7.5v.01"/></svg>';
@@ -52,8 +73,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     list.querySelectorAll('.activity-item').forEach(btn => {
       btn.addEventListener('click', () => {
+        const item = items.find(i => String(i.id) === btn.dataset.id);
         addNotifRead(sesi.idRelawan, btn.dataset.id);
         render();
+        if (item) bukaDetail(item);
       });
     });
   }
