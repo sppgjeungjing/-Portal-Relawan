@@ -102,6 +102,27 @@ function doGet(e) {
         requireAuth(e.parameter.token);
         data = getLokasiListAdmin();
         break;
+      case 'getKategoriBarang':
+        data = getKategoriBarang(e.parameter.token);
+        break;
+      case 'getKategoriBarangAdmin':
+        data = getKategoriBarangAdmin(e.parameter.token);
+        break;
+      case 'getDataBarangList':
+        data = getDataBarangList(e.parameter.token, e.parameter);
+        break;
+      case 'getDetailBarang':
+        data = getDetailBarang(e.parameter.token, e.parameter.idBarang);
+        break;
+      case 'getRiwayatStokList':
+        data = getRiwayatStokList(e.parameter.token, e.parameter);
+        break;
+      case 'getStokDashboard':
+        data = getStokDashboard(e.parameter.token);
+        break;
+      case 'getDaftarPetugasStok':
+        data = getDaftarPetugasStok(e.parameter.token);
+        break;
       default:
         return gagal('Aksi tidak dikenali: ' + action, 'UNKNOWN_ACTION');
     }
@@ -266,6 +287,30 @@ function doPost(e) {
         requireAuth(body.token);
         data = deleteLokasi(body);
         break;
+      case 'addKategoriStok':
+        data = addKategoriStok(body);
+        break;
+      case 'updateStatusKategoriAktif':
+        data = updateStatusKategoriAktif(body);
+        break;
+      case 'addBarang':
+        data = addBarang(body);
+        break;
+      case 'updateBarang':
+        data = updateBarang(body);
+        break;
+      case 'updateStatusBarangAktif':
+        data = updateStatusBarangAktif(body);
+        break;
+      case 'simpanBarangMasuk':
+        data = simpanBarangMasuk(body);
+        break;
+      case 'simpanBarangKeluar':
+        data = simpanBarangKeluar(body);
+        break;
+      case 'setRoleStok':
+        data = setRoleStok(body);
+        break;
       default:
         return gagal('Aksi tidak dikenali: ' + action, 'UNKNOWN_ACTION');
     }
@@ -287,4 +332,3 @@ function klasifikasiError_(err) {
   if (pesan.indexOf('wajib') !== -1 || pesan.indexOf('tidak valid') !== -1 || pesan.indexOf('minimal') !== -1) return 'VALIDATION_ERROR';
   return 'SERVER_ERROR';
 }
-

@@ -221,6 +221,11 @@
         password: el.inputPassword.value
       });
       authToken = data.token;
+      // BARU (modul Stok): expose token secara terbatas ke luar closure ini,
+      // supaya admin-stok.js (file terpisah, tidak mengubah logic admin.js
+      // yang sudah ada) bisa memakai sesi admin yang sama tanpa login ulang.
+      window.sppgAdminToken = authToken;
+      window.dispatchEvent(new CustomEvent('sppg-admin-ready'));
       el.loginWrap.classList.add('is-hidden');
       el.dashboardWrap.classList.remove('is-hidden');
       await initDashboard();
@@ -234,6 +239,7 @@
   el.btnLogout.addEventListener('click', async () => {
     const tokenLama = authToken;
     authToken = null;
+    window.sppgAdminToken = null; // BARU (modul Stok): ikut dikosongkan saat logout
     el.dashboardWrap.classList.add('is-hidden');
     el.loginWrap.classList.remove('is-hidden');
     el.inputPassword.value = '';
