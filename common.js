@@ -188,3 +188,17 @@ async function apiHealthCheck() {
     return false;
   }
 }
+
+// ------------------------------------------------------------
+// PWA — pendaftaran service worker (Fase 2)
+// Aditif, tidak mengubah fungsi lain di atas. Gagal daftar (mis. browser
+// lama/tidak dukung) dibiarkan diam-diam -- situs tetap berjalan normal
+// sebagai halaman web biasa tanpa fitur PWA.
+// ------------------------------------------------------------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {
+      // PWA opsional -- jangan ganggu pengalaman utama kalau gagal daftar.
+    });
+  });
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Portal SPPG Jeungjing",
+  "short_name": "SPPG Jeungjing",
+  "description": "Portal Relawan SPPG Jeungjing — Absensi, Stok & Persediaan, Shift, dan informasi operasional.",
+  "start_url": "./dashboard.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f6f9",
+  "theme_color": "#12294d",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
