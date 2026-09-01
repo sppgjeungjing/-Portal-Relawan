@@ -109,6 +109,18 @@
       </div>
     </div>
 
+    <!-- STATE: konfirmasi sebelum kamera/GPS aktif -->
+    <div class="auth-card absensi-card" id="stateKonfirmasi" style="display:none;">
+      <div class="absensi-confirm-banner" id="confirmBanner">
+        <div class="absensi-confirm-icon" id="confirmIcon">→</div>
+        <div>
+          <p class="absensi-confirm-title" id="confirmTitle">Anda Akan Absen Masuk</p>
+          <p class="absensi-confirm-sub" id="confirmSub">Pastikan ini sesuai sebelum melanjutkan.</p>
+        </div>
+      </div>
+      <button type="button" class="btn-submit" id="btnLanjutkanAbsen" style="margin-top:16px;">Lanjutkan</button>
+    </div>
+
     <!-- STATE: form presensi (Masuk / Pulang) -->
     <div id="stateForm" style="display:none;">
       <div class="auth-card absensi-card">
@@ -162,6 +174,20 @@
       </div>
     </div>
 
+  </div>
+
+  <div class="absensi-success-overlay is-hidden" id="overlaySuksesAbsen">
+    <div class="absensi-success-card">
+      <div class="absensi-success-circle" id="suksesCircle">✓</div>
+      <p class="absensi-success-title" id="suksesTitle">Absen Masuk Berhasil</p>
+      <p class="absensi-success-sub">Tercatat pada sistem SPPG Jeungjing</p>
+      <div class="profile-identity-list" style="text-align:left;margin:18px 0;">
+        <div class="profile-identity-row"><span>Jenis</span><span id="suksesJenis">–</span></div>
+        <div class="profile-identity-row"><span>Jam tercatat</span><span id="suksesJam">–</span></div>
+        <div class="profile-identity-row"><span>Lokasi</span><span id="suksesLokasi">–</span></div>
+      </div>
+      <button type="button" class="btn-submit" id="btnTutupSukses">Selesai</button>
+    </div>
   </div>
 
         <div class="toast is-hidden" id="errorToast" role="alert"></div>

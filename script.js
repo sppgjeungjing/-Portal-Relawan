@@ -35,6 +35,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     ringkasanJamMasuk: document.getElementById('ringkasanJamMasuk'),
     ringkasanZonaMasuk: document.getElementById('ringkasanZonaMasuk'),
 
+    stateKonfirmasi: document.getElementById('stateKonfirmasi'),
+    confirmBanner: document.getElementById('confirmBanner'),
+    confirmIcon: document.getElementById('confirmIcon'),
+    confirmTitle: document.getElementById('confirmTitle'),
+    confirmSub: document.getElementById('confirmSub'),
+    btnLanjutkanAbsen: document.getElementById('btnLanjutkanAbsen'),
+
+    overlaySuksesAbsen: document.getElementById('overlaySuksesAbsen'),
+    suksesCircle: document.getElementById('suksesCircle'),
+    suksesTitle: document.getElementById('suksesTitle'),
+    suksesJenis: document.getElementById('suksesJenis'),
+    suksesJam: document.getElementById('suksesJam'),
+    suksesLokasi: document.getElementById('suksesLokasi'),
+    btnTutupSukses: document.getElementById('btnTutupSukses'),
+
     stateForm: document.getElementById('stateForm'),
     labelJenis: document.getElementById('labelJenis'),
     judulForm: document.getElementById('judulForm'),
@@ -69,6 +84,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   el.btnKirimAbsen.addEventListener('click', kirimAbsensi);
   el.btnBukaIzin.addEventListener('click', bukaPanelIzin);
   el.btnBatalIzin.addEventListener('click', tutupPanelIzin);
+  el.btnLanjutkanAbsen.addEventListener('click', lanjutkanKeForm);
+  el.btnTutupSukses.addEventListener('click', tutupOverlaySukses);
   el.btnPilihIzin.addEventListener('click', () => pilihJenisIzin('Izin'));
   el.btnPilihSakit.addEventListener('click', () => pilihJenisIzin('Sakit'));
   el.inputKeteranganIzin.addEventListener('input', perbaruiTombolIzin);
@@ -111,6 +128,7 @@ function renderStatus() {
   // Sembunyikan semua state dulu, baru tampilkan satu yang sesuai.
   el.stateKosong.style.display = 'none';
   el.ringkasanMasuk.style.display = 'none';
+  el.stateKonfirmasi.style.display = 'none';
   el.stateForm.style.display = 'none';
   el.stateSelesai.style.display = 'none';
   el.panelIzinSakit.style.display = 'none';
@@ -155,8 +173,31 @@ function mulaiFormJenis(jenis) {
   lokasiSaya = null;
   zonaValid = false;
 
-  el.labelJenis.textContent = jenis === 'MASUK' ? 'PRESENSI MASUK' : 'PRESENSI PULANG';
-  el.judulForm.textContent = jenis === 'MASUK' ? 'Presensi Masuk' : 'Presensi Pulang';
+  // PERBAIKAN UX: jangan langsung nyalakan kamera. Tampilkan dulu banner
+  // konfirmasi besar biar relawan sadar betul ini akan mencatat Masuk atau
+  // Pulang, sebelum kamera/GPS aktif -- mencegah salah kirim tanpa sadar.
+  const isMasuk = jenis === 'MASUK';
+  el.confirmBanner.className = 'absensi-confirm-banner ' + (isMasuk ? 'jenis-masuk' : 'jenis-pulang');
+  el.confirmIcon.className = 'absensi-confirm-icon';
+  el.confirmIcon.textContent = isMasuk ? '→' : '←';
+  el.confirmTitle.textContent = isMasuk ? 'Anda Akan Absen MASUK' : 'Anda Akan Absen PULANG';
+  el.confirmSub.textContent = isMasuk
+    ? 'Belum ada catatan hadir untuk operasional hari ini.'
+    : 'Ini akan mengakhiri sesi kerja Anda untuk operasional hari ini.';
+  el.btnLanjutkanAbsen.textContent = isMasuk ? 'Ya, Mulai Absen Masuk' : 'Ya, Mulai Absen Pulang';
+  el.btnLanjutkanAbsen.className = 'btn-submit';
+
+  el.stateKonfirmasi.style.display = 'block';
+  el.stateForm.style.display = 'none';
+}
+
+function lanjutkanKeForm() {
+  const jenis = jenisAktif;
+  const isMasuk = jenis === 'MASUK';
+
+  el.labelJenis.textContent = isMasuk ? 'PRESENSI MASUK' : 'PRESENSI PULANG';
+  el.labelJenis.className = 'absensi-jenis-label ' + (isMasuk ? 'jenis-masuk' : 'jenis-pulang');
+  el.judulForm.textContent = isMasuk ? 'Presensi Masuk' : 'Presensi Pulang';
   el.inputKeteranganAbsen.value = '';
   el.btnUlangFoto.style.display = 'none';
   el.fotoPreview.style.display = 'none';
@@ -164,6 +205,7 @@ function mulaiFormJenis(jenis) {
   el.cameraPlaceholder.style.display = 'block';
   el.cameraPlaceholder.textContent = '📷 Menyiapkan kamera…';
 
+  el.stateKonfirmasi.style.display = 'none';
   el.stateForm.style.display = 'block';
   perbaruiTombolKirim();
 
@@ -318,7 +360,7 @@ async function kirimAbsensi() {
   el.btnKirimAbsen.disabled = true;
   showLoading(jenisAktif === 'MASUK' ? 'Mengirim absensi masuk...' : 'Mengirim absensi pulang...');
   try {
-    await apiPost('submitAbsensi', {
+    const hasil = await apiPost('submitAbsensi', {
       token: sesiAbsensi.token,
       jenis: jenisAktif,
       latitude: lokasiSaya.latitude,
@@ -329,13 +371,32 @@ async function kirimAbsensi() {
     }, 45000); // timeout lebih panjang: upload foto ke Drive perlu waktu lebih dari 20 detik standar
 
     hideLoading();
-    showSuccess('Absensi berhasil dicatat.');
-    await muatStatusAbsensi();
+    tampilkanOverlaySukses(hasil);
   } catch (err) {
     hideLoading();
     showError(err.message || 'Absensi gagal dikirim.');
     perbaruiTombolKirim();
   }
+}
+
+// ------------------------------------------------------------
+// LAYAR SUKSES (wajib ditutup manual sebelum lanjut, biar relawan
+// yakin betul absennya sudah masuk & tahu jenis + jam yang tercatat)
+// ------------------------------------------------------------
+
+function tampilkanOverlaySukses(hasil) {
+  const isMasuk = hasil.jenis === 'MASUK';
+  el.suksesCircle.className = 'absensi-success-circle ' + (isMasuk ? 'jenis-masuk' : 'jenis-pulang');
+  el.suksesTitle.textContent = isMasuk ? 'Absen Masuk Berhasil' : 'Absen Pulang Berhasil';
+  el.suksesJenis.textContent = hasil.jenis;
+  el.suksesJam.textContent = hasil.jam || '–';
+  el.suksesLokasi.textContent = labelZona_(hasil.statusLokasi);
+  el.overlaySuksesAbsen.classList.remove('is-hidden');
+}
+
+async function tutupOverlaySukses() {
+  el.overlaySuksesAbsen.classList.add('is-hidden');
+  await muatStatusAbsensi();
 }
 
 // ------------------------------------------------------------
