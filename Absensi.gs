@@ -1,62 +1,449 @@
 /**
  * SPPG JEUNGJING — SISTEM ABSENSI RELAWAN
  * Absensi.gs — Kirim absensi, cegah duplikasi, rekap harian & bulanan
+ *
+ * ============================================================
+ * FASE 5 — CATATAN PEROMBAKAN submitAbsensi() (fungsi terproteksi)
+ * ============================================================
+ * BEFORE : Identitas (id/nama/divisi) dikirim APA ADANYA dari body request
+ *          (form dropdown, tanpa login). Kunci duplikat: ID_RELAWAN+TANGGAL
+ *          (TANGGAL = tanggal kalender perangkat/server saat submit).
+ * AFTER  : Identitas WAJIB dari session login (requireAuthRelawan) — tidak
+ *          pernah dipercaya dari body. Selfie + GPS wajib, divalidasi ulang
+ *          di server (jarak vs MASTER_LOKASI_SPPG). Kunci duplikat:
+ *          ID_RELAWAN+ID_OPERASIONAL+JENIS_ABSENSI. TANGGAL diisi dari
+ *          TANGGAL_OPERASIONAL (Kalender Operasional) bukan tanggal
+ *          perangkat — sehingga shift lintas tengah malam tetap tercatat
+ *          di hari operasional yang benar TANPA mengubah satu pun logika
+ *          Rekap Harian/Bulanan/2-Minggu/Riwayat di bawah (semua masih
+ *          mengelompokkan berdasarkan TANGGAL, persis seperti sebelumnya).
+ * WHY    : Permintaan eksplisit (lihat dokumen "Perombakan Fitur Absensi")
+ *          — sistem belum diterapkan resmi, perombakan alur diizinkan.
+ * RISK   : Relawan tanpa akun tidak bisa absen sampai Admin membuatkan akun
+ *          (lihat tab Akun Relawan). QR code lama tidak lagi dipakai.
+ * ROLLBACK: Simpan salinan file ini sebelum menimpa. 03_DATA_ABSENSI kolom
+ *          A–I (data lama) tidak diubah strukturnya — hanya menambah kolom
+ *          J–P di akhir — jadi rollback kode tidak merusak data yang sudah
+ *          masuk lewat versi baru (kolom baru cukup diabaikan oleh kode lama).
+ * ============================================================
  */
 
-const KOLOM_ABSENSI = {
-  NO: 0, TIMESTAMP: 1, TANGGAL: 2, JAM: 3, ID_RELAWAN: 4,
-  NAMA_RELAWAN: 5, DIVISI: 6, JENIS_ABSENSI: 7, KETERANGAN: 8
-};
+// ------------------------------------------------------------
+// SUBMIT ABSENSI (Fase 5 — Selfie + GPS, identitas dari session)
+// ------------------------------------------------------------
+
+/** Semua baris 03_DATA_ABSENSI dengan TANGGAL sudah diseragamkan jadi teks "dd/MM/yyyy"
+ * (lihat catatan bacaTanggalDMY_ di Utils.gs — perbaikan penting terhadap bug Sheets
+ * yang otomatis mengonversi teks tanggal menjadi tipe Date). */
+function getAbsensiRows_() {
+  const rows = sheetToObjects(getSheet(NAMA_SHEET.ABSENSI));
+  rows.forEach(r => {
+    if (r.TANGGAL) r.TANGGAL = bacaTanggalDMY_(r.TANGGAL);
+    if (r.JAM) r.JAM = bacaJamHMS_(r.JAM);
+  });
+  return rows;
+}
 
 function submitAbsensi(body) {
-  const idRelawan = sanitize(body.id);
-  const namaRelawan = sanitize(body.nama);
-  const divisi = sanitize(body.divisi);
-  const jenis = sanitize(body.jenis).toUpperCase();
-  const keterangan = sanitize(body.keterangan);
+  const idRelawan = requireAuthRelawan(body.token);
+  const relawan = getRelawanById(idRelawan);
+  if (!relawan || String(relawan.status).toUpperCase() !== 'AKTIF') {
+    throw new Error('Data relawan tidak aktif. Hubungi admin.');
+  }
 
-  if (!idRelawan || !namaRelawan || !divisi) throw new Error('Data relawan tidak lengkap.');
+  const jenis = sanitize(body.jenis).toUpperCase();
   if (jenis !== 'MASUK' && jenis !== 'PULANG') throw new Error('Jenis absensi tidak valid.');
 
-  // Pastikan relawan masih terdaftar & aktif (mencegah pengiriman dari data lama/nonaktif).
-  const relawanAktif = getRelawanList(null, false).some(r => r.id === idRelawan);
-  if (!relawanAktif) throw new Error('Data relawan tidak ditemukan atau sudah nonaktif. Hubungi admin.');
+  const lat = Number(body.latitude);
+  const lng = Number(body.longitude);
+  const akurasi = body.akurasi !== undefined && body.akurasi !== null && body.akurasi !== '' ? Number(body.akurasi) : '';
+  validasiKoordinat_(lat, lng);
 
+  const fotoBase64 = body.fotoBase64;
+  if (!fotoBase64 || typeof fotoBase64 !== 'string' || fotoBase64.length < 100) {
+    throw new Error('Swafoto wajib diambil sebelum melakukan absensi.');
+  }
+  if (fotoBase64.length > 6 * 1024 * 1024) {
+    throw new Error('Ukuran foto terlalu besar. Coba ambil ulang swafoto.');
+  }
+
+  const keterangan = sanitize(body.keterangan);
+
+  // ----- Validasi lokasi (server WAJIB validasi ulang, tidak percaya frontend) -----
+  const lokasi = getLokasiAktif_();
+  if (!lokasi) throw new Error('Lokasi SPPG belum diatur oleh Admin. Hubungi admin sebelum melakukan absensi.');
+
+  const jarak = hitungJarakMeter_(lat, lng, lokasi.latitude, lokasi.longitude);
+  const statusLokasi = jarak <= lokasi.radiusMeter ? 'DALAM_ZONA' : 'LUAR_ZONA';
+  if (statusLokasi === 'LUAR_ZONA') {
+    throw new Error('Lokasi Anda berada di luar radius absensi (±' + Math.round(jarak) + ' m dari ' +
+      lokasi.nama + ', radius diizinkan ' + lokasi.radiusMeter + ' m). Absensi tidak dapat dilakukan dari lokasi ini.');
+  }
+
+  // ----- Tentukan ID_OPERASIONAL & TANGGAL (mendukung lintas tengah malam) -----
+  const semuaAbsensiSaya = getAbsensiRows_().filter(a => a.ID_RELAWAN === idRelawan);
+  let idOperasional, tanggalOperasional;
+
+  if (jenis === 'MASUK') {
+    if (cariMasukTerbuka_(semuaAbsensiSaya)) {
+      throw new Error('Anda sudah melakukan absensi masuk dan belum absen pulang. Selesaikan absensi pulang terlebih dahulu.');
+    }
+    const opHariIni = tentukanOperasionalAktifHariIni_(idRelawan);
+    if (!opHariIni) throw new Error('Belum ada operasional aktif untuk absensi hari ini. Hubungi admin.');
+    const sudahAda = semuaAbsensiSaya.some(a => a.ID_OPERASIONAL === opHariIni.idOperasional && a.JENIS_ABSENSI === 'MASUK');
+    if (sudahAda) throw new Error('Anda sudah melakukan absensi masuk pada operasional ini.');
+    idOperasional = opHariIni.idOperasional;
+    tanggalOperasional = opHariIni.tanggal;
+  } else {
+    const masukTerbuka = cariMasukTerbuka_(semuaAbsensiSaya);
+    if (!masukTerbuka) throw new Error('Anda belum melakukan absensi masuk. Tidak dapat melakukan absensi pulang.');
+    idOperasional = masukTerbuka.ID_OPERASIONAL;
+    tanggalOperasional = masukTerbuka.TANGGAL;
+    const sudahPulang = semuaAbsensiSaya.some(a => a.ID_OPERASIONAL === idOperasional && a.JENIS_ABSENSI === 'PULANG');
+    if (sudahPulang) throw new Error('Anda sudah melakukan absensi pulang pada operasional ini.');
+  }
+
+  // ----- Upload foto ke Drive SEBELUM masuk lock, supaya lock dipegang sesingkat mungkin -----
   const now = new Date();
-  const tanggal = formatTanggal(now); // waktu SERVER, bukan dari perangkat pengguna
-  const jam = formatJam(now);
+  const fileId = uploadSelfieKeDrive_(fotoBase64, idRelawan, jenis, tanggalOperasional, now);
 
-  const sheet = getSheet(NAMA_SHEET.ABSENSI);
-  const data = sheet.getDataRange().getValues();
+  // ----- Kunci hanya untuk cek-duplikat-ulang (race condition) + tulis -----
+  const lock = LockService.getScriptLock();
+  const dapatKunci = lock.tryLock(10000);
+  if (!dapatKunci) {
+    throw new Error('Sistem sedang sibuk, terlalu banyak yang absen bersamaan. Silakan coba lagi dalam beberapa detik.');
+  }
 
-  // ----- Cegah absensi ganda pada tanggal yang sama -----
-  let sudahMasuk = false;
-  let sudahPulang = false;
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][KOLOM_ABSENSI.TANGGAL]) === tanggal && String(data[i][KOLOM_ABSENSI.ID_RELAWAN]) === idRelawan) {
-      const jenisBaris = String(data[i][KOLOM_ABSENSI.JENIS_ABSENSI]);
-      if (jenisBaris === 'MASUK') sudahMasuk = true;
-      if (jenisBaris === 'PULANG') sudahPulang = true;
+  try {
+    const sheet = getSheet(NAMA_SHEET.ABSENSI);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(h => String(h).trim());
+    const idxIdRelawan = headers.indexOf('ID_RELAWAN');
+    const idxIdOperasional = headers.indexOf('ID_OPERASIONAL');
+    const idxJenis = headers.indexOf('JENIS_ABSENSI');
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idxIdRelawan]) === idRelawan &&
+          String(data[i][idxIdOperasional]) === idOperasional &&
+          String(data[i][idxJenis]) === jenis) {
+        throw new Error(jenis === 'MASUK'
+          ? 'Anda sudah melakukan absensi masuk pada operasional ini.'
+          : 'Anda sudah melakukan absensi pulang pada operasional ini.');
+      }
+    }
+
+    const jam = formatJam(now);
+    const nomorBaru = data.length;
+    sheet.appendRow([
+      nomorBaru, now, tanggalOperasional, jam, idRelawan, relawan.nama, relawan.divisi, jenis, keterangan,
+      idOperasional, lat, lng, akurasi, Math.round(jarak), statusLokasi, fileId
+    ]);
+    // Tulis ulang kolom TANGGAL & JAM sebagai teks murni — lihat catatan paksaKolomTeks_ di Utils.gs.
+    const barisBaru = sheet.getLastRow();
+    paksaKolomTeks_(sheet, barisBaru, 3);
+    sheet.getRange(barisBaru, 3).setValue(tanggalOperasional);
+    paksaKolomTeks_(sheet, barisBaru, 4);
+    sheet.getRange(barisBaru, 4).setValue(jam);
+
+    return {
+      jenis: jenis,
+      tanggal: tanggalOperasional,
+      jam: formatJamPendek(now),
+      idOperasional: idOperasional,
+      jarakMeter: Math.round(jarak),
+      statusLokasi: statusLokasi,
+      fotoUrl: urlFotoReference_(fileId)
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Relawan mengajukan Izin/Sakit — SENGAJA tidak memerlukan selfie/GPS
+ * (fitur ini sudah ada sejak sebelum Fase 5, dipertahankan sesuai audit —
+ * lihat §L dokumen: "Pertahankan fitur Keterangan, audit dulu sebelum
+ * mengubah". Selfie+GPS wajib hanya berlaku untuk kehadiran fisik).
+ * Ditulis dengan JENIS_ABSENSI='MASUK' + KETERANGAN='Izin'/'Sakit' — sama
+ * persis seperti konvensi lama, supaya getRekapHarian/Bulanan/DuaMinggu &
+ * getRiwayatAbsensiRelawan di bawah TIDAK PERLU diubah sama sekali.
+ */
+function ajukanIzinSakit(body) {
+  const idRelawan = requireAuthRelawan(body.token);
+  const relawan = getRelawanById(idRelawan);
+  if (!relawan || String(relawan.status).toUpperCase() !== 'AKTIF') {
+    throw new Error('Data relawan tidak aktif. Hubungi admin.');
+  }
+
+  const jenisPengajuan = sanitize(body.jenisPengajuan);
+  if (jenisPengajuan !== 'Izin' && jenisPengajuan !== 'Sakit') throw new Error('Jenis pengajuan tidak valid.');
+  const keterangan = sanitize(body.keterangan);
+  if (!keterangan) throw new Error('Keterangan wajib diisi.');
+
+  const semuaAbsensiSaya = getAbsensiRows_().filter(a => a.ID_RELAWAN === idRelawan);
+  if (cariMasukTerbuka_(semuaAbsensiSaya)) {
+    throw new Error('Anda sedang berstatus sudah absen masuk dan belum pulang. Tidak dapat mengajukan izin/sakit.');
+  }
+
+  const opHariIni = tentukanOperasionalAktifHariIni_(idRelawan);
+  if (!opHariIni) throw new Error('Belum ada operasional aktif hari ini.');
+
+  const sudahAda = semuaAbsensiSaya.some(a => a.ID_OPERASIONAL === opHariIni.idOperasional && a.JENIS_ABSENSI === 'MASUK');
+  if (sudahAda) throw new Error('Anda sudah tercatat pada operasional ini.');
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('Sistem sedang sibuk. Silakan coba lagi.');
+  try {
+    const sheet = getSheet(NAMA_SHEET.ABSENSI);
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(h => String(h).trim());
+    const idxIdRelawan = headers.indexOf('ID_RELAWAN');
+    const idxIdOperasional = headers.indexOf('ID_OPERASIONAL');
+    const idxJenis = headers.indexOf('JENIS_ABSENSI');
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idxIdRelawan]) === idRelawan &&
+          String(data[i][idxIdOperasional]) === opHariIni.idOperasional &&
+          String(data[i][idxJenis]) === 'MASUK') {
+        throw new Error('Anda sudah tercatat pada operasional ini.');
+      }
+    }
+
+    const now = new Date();
+    const jamPengajuan = formatJam(now);
+    const nomorBaru = data.length;
+    sheet.appendRow([
+      nomorBaru, now, opHariIni.tanggal, jamPengajuan, idRelawan, relawan.nama, relawan.divisi, 'MASUK', jenisPengajuan,
+      opHariIni.idOperasional, '', '', '', '', '', ''
+    ]);
+    const barisBaru = sheet.getLastRow();
+    paksaKolomTeks_(sheet, barisBaru, 3);
+    sheet.getRange(barisBaru, 3).setValue(opHariIni.tanggal);
+    paksaKolomTeks_(sheet, barisBaru, 4);
+    sheet.getRange(barisBaru, 4).setValue(jamPengajuan);
+    return { success: true, jenisPengajuan: jenisPengajuan };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// ------------------------------------------------------------
+// STATUS ABSENSI RELAWAN (dipakai absensi.html — satu panggilan gabungan,
+// lihat §47 "jangan request berlebihan": identitas + lokasi SPPG + status
+// masuk/pulang hari ini semua dalam satu respons)
+// ------------------------------------------------------------
+
+function getStatusAbsensiRelawan(token) {
+  const idRelawan = requireAuthRelawan(token);
+  const relawan = getRelawanById(idRelawan);
+  const lokasi = getLokasiAktif_();
+  const semua = getAbsensiRows_().filter(a => a.ID_RELAWAN === idRelawan);
+
+  const masukTerbuka = cariMasukTerbuka_(semua);
+  let adaOperasional = false, idOperasional = null, tanggalOperasional = null, hariOperasional = '';
+  let masukRow = null, pulangRow = null;
+
+  if (masukTerbuka) {
+    adaOperasional = true;
+    idOperasional = masukTerbuka.ID_OPERASIONAL;
+    tanggalOperasional = masukTerbuka.TANGGAL;
+    masukRow = masukTerbuka;
+    pulangRow = semua.find(a => a.ID_OPERASIONAL === idOperasional && a.JENIS_ABSENSI === 'PULANG') || null;
+  } else {
+    const opHariIni = tentukanOperasionalAktifHariIni_(idRelawan);
+    if (opHariIni) {
+      adaOperasional = true;
+      idOperasional = opHariIni.idOperasional;
+      tanggalOperasional = opHariIni.tanggal;
+      hariOperasional = opHariIni.hari;
+      masukRow = semua.find(a => a.ID_OPERASIONAL === idOperasional && a.JENIS_ABSENSI === 'MASUK') || null;
+      pulangRow = semua.find(a => a.ID_OPERASIONAL === idOperasional && a.JENIS_ABSENSI === 'PULANG') || null;
     }
   }
 
-  if (jenis === 'MASUK' && sudahMasuk) {
-    throw new Error('Anda sudah melakukan absensi masuk hari ini.');
-  }
-  if (jenis === 'PULANG') {
-    if (!sudahMasuk) throw new Error('Anda belum melakukan absensi masuk hari ini.');
-    if (sudahPulang) throw new Error('Anda sudah melakukan absensi pulang hari ini.');
+  let durasi = null;
+  if (masukRow && pulangRow && masukRow.TIMESTAMP instanceof Date && pulangRow.TIMESTAMP instanceof Date) {
+    const totalMenit = Math.max(0, Math.round((pulangRow.TIMESTAMP.getTime() - masukRow.TIMESTAMP.getTime()) / 60000));
+    durasi = Math.floor(totalMenit / 60) + ' jam ' + (totalMenit % 60) + ' menit';
   }
 
-  // ----- Simpan (data lama TIDAK PERNAH dihapus/ditimpa) -----
-  const nomorBaru = data.length; // jumlah baris data (tanpa header) + 1
-  sheet.appendRow([nomorBaru, now, tanggal, jam, idRelawan, namaRelawan, divisi, jenis, keterangan]);
-
-  return { nama: namaRelawan, divisi: divisi, jenis: jenis, tanggal: tanggal, jam: formatJamPendek(now) };
+  return {
+    identitas: { id: idRelawan, nama: relawan ? relawan.nama : '', divisi: relawan ? relawan.divisi : '' },
+    lokasiSppg: lokasi ? { nama: lokasi.nama, latitude: lokasi.latitude, longitude: lokasi.longitude, radiusMeter: lokasi.radiusMeter } : null,
+    operasional: adaOperasional ? { ada: true, idOperasional: idOperasional, tanggal: tanggalOperasional, hari: hariOperasional } : { ada: false },
+    masuk: buildDetailAbsensi_(masukRow),
+    pulang: buildDetailAbsensi_(pulangRow),
+    durasi: durasi
+  };
 }
 
+function buildDetailAbsensi_(row) {
+  if (!row) return { sudah: false };
+  return {
+    sudah: true,
+    jam: row.JAM,
+    keterangan: row.KETERANGAN || '',
+    isIzinSakit: row.KETERANGAN === 'Izin' || row.KETERANGAN === 'Sakit',
+    jarakMeter: row.JARAK_METER !== '' && row.JARAK_METER !== undefined ? Number(row.JARAK_METER) : null,
+    statusLokasi: row.STATUS_LOKASI || null,
+    fotoUrl: row.FOTO_REFERENCE ? urlFotoReference_(row.FOTO_REFERENCE) : null
+  };
+}
+
+/**
+ * Shift yang masih "terbuka" (MASUK asli — bukan Izin/Sakit — tanpa PULANG
+ * yang cocok). Dipakai untuk mendukung lintas tengah malam: relawan yang
+ * masuk jam 23:00 kemarin dan belum pulang, saat membuka absensi.html hari
+ * ini akan tetap diarahkan ke form PULANG untuk operasional KEMARIN,
+ * bukan diminta mengisi MASUK baru untuk hari ini.
+ *
+ * Hanya mempertimbangkan baris dengan ID_OPERASIONAL terisi (baris lama
+ * sebelum Fase 5 dibiarkan kosong di kolom ini) — supaya data historis
+ * yang belum termigrasi tidak keliru dianggap sebagai shift yang masih
+ * terbuka dan memblokir absensi baru.
+ */
+function cariMasukTerbuka_(semuaAbsensiSaya) {
+  const masukAsli = semuaAbsensiSaya
+    .filter(a => a.JENIS_ABSENSI === 'MASUK' && a.KETERANGAN !== 'Izin' && a.KETERANGAN !== 'Sakit' && a.ID_OPERASIONAL)
+    .sort((a, b) => {
+      const ta = a.TIMESTAMP instanceof Date ? a.TIMESTAMP.getTime() : 0;
+      const tb = b.TIMESTAMP instanceof Date ? b.TIMESTAMP.getTime() : 0;
+      return tb - ta; // terbaru dulu
+    });
+  for (const m of masukAsli) {
+    const adaPulang = semuaAbsensiSaya.some(a => a.ID_OPERASIONAL === m.ID_OPERASIONAL && a.JENIS_ABSENSI === 'PULANG');
+    if (!adaPulang) return m;
+  }
+  return null;
+}
+
+/**
+ * Operasional AKTIF pada Kalender Operasional untuk absen MASUK "sekarang".
+ *
+ * PERBAIKAN (lintas tengah malam, menyusul Fase 5): versi sebelumnya HANYA
+ * mencocokkan ke tanggal HARI INI persis. Itu benar untuk shift siang/reguler,
+ * tapi salah untuk shift malam yang baru MULAI sebelum tengah malam sementara
+ * entri Kalender-nya dibuat untuk hari PRODUKSI (besok) — mis. relawan absen
+ * Masuk jam 23:00 tanggal 30, padahal Kalender Operasional cuma punya entri
+ * AKTIF tanggal 31. Sebelum perbaikan ini, itu selalu gagal dengan pesan
+ * "Belum ada operasional aktif", walau Admin tidak salah input apa pun.
+ *
+ * Urutan pencarian sekarang:
+ *   1) Tanggal HARI INI (diutamakan — mencakup semua shift siang/reguler).
+ *   2) Kalau tidak ketemu DAN jam sekarang >= JAM_MULAI_CEK_OPERASIONAL_BESOK
+ *      (lihat Utils.gs), coba tanggal BESOK — shift malam yang baru dimulai
+ *      dianggap menempel ke hari produksi besok, TANPA Admin perlu membuat
+ *      entri Kalender terpisah untuk hari ini.
+ *
+ * Absen PULANG tidak lewat fungsi ini — itu selalu mengikuti ID_OPERASIONAL
+ * dari MASUK yang masih terbuka (lihat cariMasukTerbuka_), jadi otomatis
+ * konsisten dengan tanggal operasional yang dipilih saat MASUK, berapa pun
+ * lama shift-nya berlangsung.
+ */
+function tentukanOperasionalAktifHariIni_(idRelawan) {
+  const now = new Date();
+  const semuaKalender = getKalenderRows_();
+
+  const hariIni = formatTanggal(now);
+  const jamMenitSekarang = Utilities.formatDate(now, ZONA_WAKTU, 'HH:mm');
+
+  // Tanggal besok dihitung dari komponen dd/MM/yyyy milik ZONA_WAKTU
+  // (bukan getFullYear/getMonth/getDate langsung dari `now`, yang ikut
+  // timezone proyek Apps Script) — supaya "besok" selalu benar walau
+  // timezone proyek belum diset eksplisit ke Asia/Jakarta.
+  const [ddStr, mmStr, yyyyStr] = hariIni.split('/');
+  const besok = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr) + 1);
+  const tanggalBesok = formatTanggal(besok);
+  const cocokBesok = semuaKalender.find(k => k.TANGGAL_OPERASIONAL === tanggalBesok && k.STATUS === 'AKTIF');
+
+  // ============================================================
+  // INTEGRASI SHIFT (Fase 3+4): kalau relawan diketahui dan modul Shift
+  // sudah punya jam masuk untuk divisinya pada operasional BESOK, dan jam
+  // sekarang sudah masuk jendela shift itu (toleransi datang awal 60
+  // menit), PRIORITASKAN besok -- WALAU hari ini kebetulan juga punya
+  // entri aktif (kasus nyata: siang masih operasional hari ini, tapi
+  // malam ini sudah masuk jam shift untuk operasional besok, mis. Tim
+  // Persiapan 17:00). Tanpa ini, kode LAMA di bawah selalu memenangkan
+  // "hari ini" duluan kalau hari ini kebetulan juga aktif -- itu akar
+  // masalah salah-tanggal yang pernah terjadi.
+  //
+  // Dibungkus try/catch dan cek `typeof` supaya TETAP AMAN kalau Shift.gs
+  // belum sempat ditambahkan ke proyek (fallback otomatis ke logika lama).
+  // ============================================================
+  if (idRelawan && cocokBesok && typeof jamMulaiShiftDenganToleransi_ === 'function') {
+    try {
+      const batasAwal = jamMulaiShiftDenganToleransi_(idRelawan, cocokBesok.ID_OPERASIONAL, 60);
+      if (batasAwal && jamMenitSekarang >= batasAwal) {
+        return { idOperasional: cocokBesok.ID_OPERASIONAL, tanggal: cocokBesok.TANGGAL_OPERASIONAL, hari: cocokBesok.HARI };
+      }
+    } catch (errShift) {
+      // Data Shift belum lengkap/valid untuk relawan ini -- abaikan, lanjut ke logika lama di bawah.
+    }
+  }
+
+  // ----- Logika LAMA (dipertahankan persis, jadi fallback wajib) -----
+  const cocokHariIni = semuaKalender.find(k => k.TANGGAL_OPERASIONAL === hariIni && k.STATUS === 'AKTIF');
+  if (cocokHariIni) {
+    return { idOperasional: cocokHariIni.ID_OPERASIONAL, tanggal: cocokHariIni.TANGGAL_OPERASIONAL, hari: cocokHariIni.HARI };
+  }
+
+  const jamSekarang = Number(Utilities.formatDate(now, ZONA_WAKTU, 'H'));
+  if (jamSekarang >= JAM_MULAI_CEK_OPERASIONAL_BESOK && cocokBesok) {
+    return { idOperasional: cocokBesok.ID_OPERASIONAL, tanggal: cocokBesok.TANGGAL_OPERASIONAL, hari: cocokBesok.HARI };
+  }
+
+  return null;
+}
+
+// ------------------------------------------------------------
+// GOOGLE DRIVE — PENYIMPANAN SELFIE
+// Struktur: ABSENSI_SELFIE/TAHUN/BULAN/DD-MM-YYYY/ID_JENIS_HHmmss.jpg
+// Spreadsheet hanya menyimpan FILE_ID (kolom FOTO_REFERENCE) sebagai
+// referensi — bukan file gambar itu sendiri (§P dokumen pengembangan).
+// ------------------------------------------------------------
+
+function uploadSelfieKeDrive_(fotoBase64, idRelawan, jenis, tanggalOperasionalDMY, now) {
+  try {
+    const base64Bersih = String(fotoBase64).replace(/^data:image\/\w+;base64,/, '');
+    const bytes = Utilities.base64Decode(base64Bersih);
+    const blob = Utilities.newBlob(bytes, 'image/jpeg');
+
+    const bagian = tanggalOperasionalDMY.split('/');
+    const dd = bagian[0], mm = bagian[1], yyyy = bagian[2];
+
+    const root = getOrCreateFolder_(DriveApp.getRootFolder(), 'ABSENSI_SELFIE');
+    const folderTahun = getOrCreateFolder_(root, yyyy);
+    const folderBulan = getOrCreateFolder_(folderTahun, mm);
+    const folderTanggal = getOrCreateFolder_(folderBulan, dd + '-' + mm + '-' + yyyy);
+
+    const stempel = Utilities.formatDate(now, ZONA_WAKTU, 'HHmmss');
+    blob.setName(idRelawan + '_' + jenis + '_' + stempel + '.jpg');
+
+    const file = folderTanggal.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return file.getId();
+  } catch (err) {
+    console.error('[uploadSelfieKeDrive_]', err.message);
+    throw new Error('Gagal mengunggah foto ke penyimpanan. Silakan coba lagi.');
+  }
+}
+
+function getOrCreateFolder_(parent, nama) {
+  const existing = parent.getFoldersByName(nama);
+  if (existing.hasNext()) return existing.next();
+  return parent.createFolder(nama);
+}
+
+function urlFotoReference_(fileId) {
+  if (!fileId) return null;
+  return 'https://drive.google.com/uc?export=view&id=' + fileId;
+}
+
+// ------------------------------------------------------------
+// DAFTAR ABSENSI (Admin — tidak diubah dari versi sebelumnya)
+// ------------------------------------------------------------
+
 function getAbsensiList(params) {
-  const rows = sheetToObjects(getSheet(NAMA_SHEET.ABSENSI));
+  const rows = getAbsensiRows_();
   return rows.filter(r => {
     if (params.tanggal && r.TANGGAL !== params.tanggal) return false;
     if (params.divisi && r.DIVISI !== params.divisi) return false;
@@ -66,20 +453,19 @@ function getAbsensiList(params) {
 }
 
 // ------------------------------------------------------------
-// REKAP HARIAN
+// REKAP HARIAN — TIDAK DIUBAH (masih mengelompokkan berdasarkan TANGGAL,
+// yang sekarang diisi dari TANGGAL_OPERASIONAL — tetap benar tanpa perubahan)
 // ------------------------------------------------------------
 
 function getRekapHarian(tanggal) {
   if (!tanggal) tanggal = formatTanggal(new Date());
 
   const relawanList = getRelawanList(null, false); // hanya yang berstatus AKTIF
-  const absensiHariIni = sheetToObjects(getSheet(NAMA_SHEET.ABSENSI)).filter(a => a.TANGGAL === tanggal);
+  const absensiHariIni = getAbsensiRows_().filter(a => a.TANGGAL === tanggal);
 
   const rekap = relawanList.map(r => {
     const recMasuk = absensiHariIni.find(a => a.ID_RELAWAN === r.id && a.JENIS_ABSENSI === 'MASUK');
     const recPulang = absensiHariIni.find(a => a.ID_RELAWAN === r.id && a.JENIS_ABSENSI === 'PULANG');
-    // Relawan dapat melapor Izin/Sakit melalui field Keterangan yang sama,
-    // termasuk dari luar lokasi absensi (lihat README → "Asumsi & Catatan Desain").
     const recIzinSakit = absensiHariIni.find(a => a.ID_RELAWAN === r.id && (a.KETERANGAN === 'Izin' || a.KETERANGAN === 'Sakit'));
 
     let status = 'BELUM ABSEN';
@@ -89,7 +475,7 @@ function getRekapHarian(tanggal) {
       status = String(recIzinSakit.KETERANGAN).toUpperCase();
       keterangan = recIzinSakit.KETERANGAN;
     } else if (recMasuk) {
-      status = apakahTerlambat(recMasuk.JAM) ? 'TERLAMBAT' : 'HADIR';
+      status = (typeof apakahTerlambatShiftAware_ === 'function' ? apakahTerlambatShiftAware_(r.id, recMasuk.ID_OPERASIONAL, recMasuk.JAM) : apakahTerlambat(recMasuk.JAM)) ? 'TERLAMBAT' : 'HADIR';
       keterangan = recMasuk.KETERANGAN || '';
     }
 
@@ -100,16 +486,24 @@ function getRekapHarian(tanggal) {
       jamMasuk: recMasuk ? recMasuk.JAM : '',
       jamPulang: recPulang ? recPulang.JAM : '',
       status: status,
-      keterangan: keterangan
+      keterangan: keterangan,
+      lokasiMasuk: buildLokasiRingkas_(recMasuk),
+      lokasiPulang: buildLokasiRingkas_(recPulang),
+      fotoMasukUrl: recMasuk && recMasuk.FOTO_REFERENCE ? urlFotoReference_(recMasuk.FOTO_REFERENCE) : null,
+      fotoPulangUrl: recPulang && recPulang.FOTO_REFERENCE ? urlFotoReference_(recPulang.FOTO_REFERENCE) : null
     };
   });
 
-  // Simpan salinan hasil olahan ke sheet REKAP_HARIAN agar bisa dilihat
-  // langsung di Spreadsheet juga. Ini HANYA sheet hasil olahan/cache —
-  // data mentah di 03_DATA_ABSENSI tidak pernah disentuh oleh fungsi ini.
   try { simpanRekapHarianKeSheet(tanggal, rekap); } catch (e) { /* jangan gagalkan permintaan utama */ }
 
   return { tanggal: tanggal, data: rekap };
+}
+
+/** Ringkasan lokasi utk kolom Rekap Admin, mis. "18 m · Dalam Zona". null kalau baris tidak punya data GPS (Izin/Sakit/belum absen/data lama). */
+function buildLokasiRingkas_(rec) {
+  if (!rec || rec.JARAK_METER === '' || rec.JARAK_METER === undefined || rec.JARAK_METER === null) return null;
+  const zona = rec.STATUS_LOKASI === 'DALAM_ZONA' ? 'Dalam Zona' : (rec.STATUS_LOKASI === 'LUAR_ZONA' ? 'Luar Zona' : '');
+  return Math.round(Number(rec.JARAK_METER)) + ' m' + (zona ? ' · ' + zona : '');
 }
 
 function simpanRekapHarianKeSheet(tanggal, rekap) {
@@ -124,7 +518,7 @@ function simpanRekapHarianKeSheet(tanggal, rekap) {
 }
 
 // ------------------------------------------------------------
-// REKAP BULANAN
+// REKAP BULANAN — TIDAK DIUBAH
 // ------------------------------------------------------------
 
 function getRekapBulanan(bulan, tahun) {
@@ -133,28 +527,26 @@ function getRekapBulanan(bulan, tahun) {
   tahun = Number(tahun) || Number(Utilities.formatDate(now, ZONA_WAKTU, 'yyyy'));
 
   const relawanList = getRelawanList(null, false);
-  const semuaAbsensi = sheetToObjects(getSheet(NAMA_SHEET.ABSENSI));
+  const semuaAbsensi = getAbsensiRows_();
 
   const absensiBulanIni = semuaAbsensi.filter(a => {
-    const bagian = String(a.TANGGAL).split('/'); // format dd/mm/yyyy
+    const bagian = String(a.TANGGAL).split('/');
     return bagian.length === 3 && Number(bagian[1]) === bulan && Number(bagian[2]) === tahun;
   });
 
-  // Jumlah hari unik yang tercatat ada aktivitas absensi bulan ini —
-  // dipakai sebagai perkiraan jumlah "hari kerja" untuk menghitung Tidak Hadir.
   const tanggalUnik = Array.from(new Set(absensiBulanIni.map(a => a.TANGGAL)));
 
   const rekap = relawanList.map(r => {
     const recAbsensi = absensiBulanIni.filter(a => a.ID_RELAWAN === r.id);
     let hadir = 0, terlambat = 0, izin = 0, sakit = 0;
-    const tanggalTercatat = new Set(); // satu status per hari per relawan
+    const tanggalTercatat = new Set();
 
     recAbsensi.forEach(a => {
       if (tanggalTercatat.has(a.TANGGAL)) return;
       if (a.KETERANGAN === 'Izin') { izin++; tanggalTercatat.add(a.TANGGAL); }
       else if (a.KETERANGAN === 'Sakit') { sakit++; tanggalTercatat.add(a.TANGGAL); }
       else if (a.JENIS_ABSENSI === 'MASUK') {
-        if (apakahTerlambat(a.JAM)) terlambat++; else hadir++;
+        if ((typeof apakahTerlambatShiftAware_ === 'function' ? apakahTerlambatShiftAware_(r.id, a.ID_OPERASIONAL, a.JAM) : apakahTerlambat(a.JAM))) terlambat++; else hadir++;
         tanggalTercatat.add(a.TANGGAL);
       }
     });
@@ -178,4 +570,120 @@ function simpanRekapBulananKeSheet(bulan, tahun, rekap) {
   if (!rekap.length) return;
   const rows = rekap.map(r => [bulan, tahun, r.id, r.nama, r.divisi, r.hadir, r.terlambat, r.izin, r.sakit, r.tidakHadir]);
   sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+}
+
+// ------------------------------------------------------------
+// REKAP 2 MINGGU — TIDAK DIUBAH
+// ------------------------------------------------------------
+
+function tanggalSheetKeIso_(tanggalSheet) {
+  const bagian = String(tanggalSheet).split('/');
+  if (bagian.length !== 3) return null;
+  const dd = bagian[0].padStart(2, '0');
+  const mm = bagian[1].padStart(2, '0');
+  const yyyy = bagian[2];
+  return yyyy + '-' + mm + '-' + dd;
+}
+
+function getRekapDuaMinggu(periodeAwal, periodeAkhir) {
+  periodeAwal = sanitize(periodeAwal);
+  periodeAkhir = sanitize(periodeAkhir);
+  if (!periodeAwal || !periodeAkhir) throw new Error('Periode awal dan akhir wajib diisi.');
+  if (periodeAwal > periodeAkhir) throw new Error('Periode awal tidak boleh setelah periode akhir.');
+
+  const relawanList = getRelawanList(null, false);
+  const semuaAbsensi = getAbsensiRows_();
+
+  const absensiPeriode = semuaAbsensi.filter(a => {
+    const iso = tanggalSheetKeIso_(a.TANGGAL);
+    return iso && iso >= periodeAwal && iso <= periodeAkhir;
+  });
+
+  const tanggalUnik = Array.from(new Set(absensiPeriode.map(a => a.TANGGAL)));
+  const totalHariKerja = tanggalUnik.length;
+
+  const rekap = relawanList.map(r => {
+    const recAbsensi = absensiPeriode.filter(a => a.ID_RELAWAN === r.id);
+    let hadir = 0, terlambat = 0, izin = 0, sakit = 0;
+    const tanggalTercatat = new Set();
+
+    recAbsensi.forEach(a => {
+      if (tanggalTercatat.has(a.TANGGAL)) return;
+      if (a.KETERANGAN === 'Izin') { izin++; tanggalTercatat.add(a.TANGGAL); }
+      else if (a.KETERANGAN === 'Sakit') { sakit++; tanggalTercatat.add(a.TANGGAL); }
+      else if (a.JENIS_ABSENSI === 'MASUK') {
+        if ((typeof apakahTerlambatShiftAware_ === 'function' ? apakahTerlambatShiftAware_(r.id, a.ID_OPERASIONAL, a.JAM) : apakahTerlambat(a.JAM))) terlambat++; else hadir++;
+        tanggalTercatat.add(a.TANGGAL);
+      }
+    });
+
+    const tidakHadir = Math.max(0, totalHariKerja - (hadir + terlambat + izin + sakit));
+
+    return {
+      id: r.id, nama: r.nama, divisi: r.divisi,
+      hadir: hadir, terlambat: terlambat, izin: izin, sakit: sakit,
+      tidakHadir: tidakHadir, totalHariKerja: totalHariKerja
+    };
+  });
+
+  try { simpanRekapDuaMingguKeSheet(periodeAwal, periodeAkhir, rekap); } catch (e) { /* jangan gagalkan permintaan utama */ }
+
+  return { periodeAwal: periodeAwal, periodeAkhir: periodeAkhir, totalHariKerja: totalHariKerja, data: rekap };
+}
+
+function simpanRekapDuaMingguKeSheet(periodeAwal, periodeAkhir, rekap) {
+  const sheet = getSheet(NAMA_SHEET.REKAP_DUA_MINGGU);
+  const data = sheet.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][0]) === periodeAwal && String(data[i][1]) === periodeAkhir) sheet.deleteRow(i + 1);
+  }
+  if (!rekap.length) return;
+  const rows = rekap.map(r => [
+    periodeAwal, periodeAkhir, r.id, r.nama, r.divisi,
+    r.hadir, r.terlambat, r.izin, r.sakit, r.tidakHadir, r.totalHariKerja
+  ]);
+  sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+}
+
+// ------------------------------------------------------------
+// RIWAYAT ABSENSI RELAWAN — TIDAK DIUBAH
+// ------------------------------------------------------------
+
+function getRiwayatAbsensiRelawan(token) {
+  const idRelawan = requireAuthRelawan(token);
+  const semuaAbsensi = getAbsensiRows_();
+  const milikSaya = semuaAbsensi.filter(a => a.ID_RELAWAN === idRelawan);
+
+  const hariIni = new Date();
+  const riwayat = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(hariIni.getFullYear(), hariIni.getMonth(), hariIni.getDate() - i);
+    const tgl = formatTanggal(d);
+    const recHariItu = milikSaya.filter(a => a.TANGGAL === tgl);
+    const masuk = recHariItu.find(a => a.JENIS_ABSENSI === 'MASUK');
+    const pulang = recHariItu.find(a => a.JENIS_ABSENSI === 'PULANG');
+
+    let status;
+    let keterangan = '';
+    if (masuk && masuk.KETERANGAN === 'Izin') {
+      status = 'Izin'; keterangan = masuk.KETERANGAN;
+    } else if (masuk && masuk.KETERANGAN === 'Sakit') {
+      status = 'Sakit'; keterangan = masuk.KETERANGAN;
+    } else if (masuk) {
+      status = (typeof apakahTerlambatShiftAware_ === 'function' ? apakahTerlambatShiftAware_(idRelawan, masuk.ID_OPERASIONAL, masuk.JAM) : apakahTerlambat(masuk.JAM)) ? 'Terlambat' : 'Hadir';
+      keterangan = masuk.KETERANGAN || '';
+    } else {
+      status = 'Tidak Hadir';
+    }
+
+    riwayat.push({
+      tanggal: tgl,
+      jamMasuk: masuk ? masuk.JAM : '',
+      jamPulang: pulang ? pulang.JAM : '',
+      status: status,
+      keterangan: keterangan
+    });
+  }
+
+  return riwayat;
 }

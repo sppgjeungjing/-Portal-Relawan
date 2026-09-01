@@ -567,3 +567,13 @@
   border: none; background: var(--color-danger-bg); color: var(--color-danger);
   border-radius: var(--radius-sm); padding: 8px 10px; cursor: pointer; font-weight: 700;
 }
+
+/* ================================================================
+   MODUL SHIFT & KOREKSI (BARU) — aditif
+   ================================================================ */
+.shift-subtab.active { background: var(--color-navy); color: #fff; border-color: var(--color-navy); }
+
+.shift-koreksi-row {
+  background: #f7f8fa; border-radius: var(--radius-md); padding: 14px; margin-top: 12px;
+}
+.shift-koreksi-row .profile-identity-list { margin: 10px 0; }

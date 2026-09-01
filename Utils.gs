@@ -31,7 +31,9 @@ const NAMA_SHEET = {
   STOK_KATEGORI: '17_STOK_KATEGORI',
   STOK_BARANG: '18_STOK_BARANG',
   STOK_TRANSAKSI: '19_STOK_TRANSAKSI',
-  STOK_TRANSAKSI_DETAIL: '20_STOK_TRANSAKSI_DETAIL'
+  STOK_TRANSAKSI_DETAIL: '20_STOK_TRANSAKSI_DETAIL',
+  SHIFT_DIVISI: '21_SHIFT_DIVISI',
+  PENUGASAN_KHUSUS: '22_PENUGASAN_KHUSUS'
 };
 
 // Jam masuk standar (format 24 jam, "HH:MM"). Relawan yang absen MASUK
@@ -176,15 +178,20 @@ function paksaKolomTeks_(sheet, baris, kolom, jumlahBaris) {
 }
 
 /** Mengecek apakah suatu jam ("HH:mm" atau "HH:mm:ss") melewati JAM_MASUK_STANDAR. */
-function apakahTerlambat(jamString) {
-  if (!jamString) return false;
+/** Bandingkan jamString terhadap batas HH:mm mana pun (dipakai apakahTerlambat & modul Shift). */
+function apakahTerlambatDenganBatas_(jamString, batasHHmm) {
+  if (!jamString || !batasHHmm) return false;
   const bagian = String(jamString).split(':');
   const jam = Number(bagian[0]);
   const menit = Number(bagian[1]);
-  const batas = JAM_MASUK_STANDAR.split(':').map(Number);
+  const batas = String(batasHHmm).split(':').map(Number);
   if (jam > batas[0]) return true;
   if (jam === batas[0] && menit > batas[1]) return true;
   return false;
+}
+
+function apakahTerlambat(jamString) {
+  return apakahTerlambatDenganBatas_(jamString, JAM_MASUK_STANDAR);
 }
 
 // ------------------------------------------------------------

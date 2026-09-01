@@ -123,6 +123,17 @@ function doGet(e) {
       case 'getDaftarPetugasStok':
         data = getDaftarPetugasStok(e.parameter.token);
         break;
+      case 'getShiftDivisiListAdmin':
+        requireAuth(e.parameter.token);
+        data = getShiftDivisiListAdmin(e.parameter.idPeriode);
+        break;
+      case 'getPenugasanKhususListAdmin':
+        requireAuth(e.parameter.token);
+        data = getPenugasanKhususListAdmin(e.parameter.idOperasional);
+        break;
+      case 'cariAbsensiUntukKoreksi':
+        data = cariAbsensiUntukKoreksi(e.parameter.token, e.parameter.idRelawan, e.parameter.tanggalPresensi);
+        break;
       default:
         return gagal('Aksi tidak dikenali: ' + action, 'UNKNOWN_ACTION');
     }
@@ -310,6 +321,21 @@ function doPost(e) {
         break;
       case 'setRoleStok':
         data = setRoleStok(body);
+        break;
+      case 'addShiftDivisi':
+        data = addShiftDivisi(body);
+        break;
+      case 'deleteShiftDivisi':
+        data = deleteShiftDivisi(body);
+        break;
+      case 'addPenugasanKhusus':
+        data = addPenugasanKhusus(body);
+        break;
+      case 'deletePenugasanKhusus':
+        data = deletePenugasanKhusus(body);
+        break;
+      case 'koreksiTanggalOperasionalAbsensi':
+        data = koreksiTanggalOperasionalAbsensi(body);
         break;
       default:
         return gagal('Aksi tidak dikenali: ' + action, 'UNKNOWN_ACTION');
