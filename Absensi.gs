@@ -435,7 +435,12 @@ function getOrCreateFolder_(parent, nama) {
 
 function urlFotoReference_(fileId) {
   if (!fileId) return null;
-  return 'https://drive.google.com/uc?export=view&id=' + fileId;
+  // PERBAIKAN: format "uc?export=view" sering gagal tampil sebagai <img> --
+  // Google kadang mengarahkannya ke halaman peringatan/scan virus alih-alih
+  // gambar mentah, terutama saat diakses berulang kali (hotlink). Format
+  // "thumbnail" di bawah ini disajikan lewat CDN gambar Google yang jauh
+  // lebih stabil untuk ditampilkan langsung di tag <img>.
+  return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
 }
 
 // ------------------------------------------------------------

@@ -73,6 +73,24 @@ function getSheet(namaSheet) {
 }
 
 /** Mengubah data sheet (2D array) menjadi array of object berdasarkan header baris pertama. */
+/**
+ * PERBAIKAN UNIVERSAL: kolom mana pun yang isinya waktu ("HH:mm:ss") kadang
+ * otomatis dikonversi Google Sheets jadi nilai Time asli, yang selalu
+ * "menempel" ke tanggal epoch 30 Desember 1899 saat dibaca sebagai objek
+ * Date. Ini terjadi di BANYAK tempat (Absensi, Riwayat, Dashboard Admin)
+ * karena semuanya baca lewat sheetToObjects -- makanya diperbaiki DI SINI,
+ * satu tempat, bukan di tiap halaman satu per satu.
+ * Heuristiknya aman: satu-satunya cara sebuah Date bertanggal PERSIS
+ * 30 Des 1899 muncul di sheet ini adalah lewat bug konversi Time di atas --
+ * tidak ada data asli yang datang dari tanggal itu.
+ */
+function bersihkanNilaiSheet_(nilai) {
+  if (nilai instanceof Date && nilai.getFullYear() === 1899 && nilai.getMonth() === 11 && nilai.getDate() === 30) {
+    return formatJam(nilai); // -> teks "HH:mm:ss"
+  }
+  return nilai;
+}
+
 function sheetToObjects(sheet) {
   const data = sheet.getDataRange().getValues();
   if (data.length < 2) return [];
@@ -81,7 +99,7 @@ function sheetToObjects(sheet) {
     .filter(row => row.some(cell => cell !== '' && cell !== null))
     .map(row => {
       const obj = {};
-      headers.forEach((h, i) => { obj[h] = row[i]; });
+      headers.forEach((h, i) => { obj[h] = bersihkanNilaiSheet_(row[i]); });
       return obj;
     });
 }
