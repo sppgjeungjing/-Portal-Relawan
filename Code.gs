@@ -108,6 +108,18 @@ function doGet(e) {
       case 'getKategoriBarangAdmin':
         data = getKategoriBarangAdmin(e.parameter.token);
         break;
+      case 'getSatuanList':
+        data = getSatuanList(e.parameter.token);
+        break;
+      case 'getProfilRoleSaya':
+        data = getProfilRoleSaya(e.parameter.token);
+        break;
+      case 'getRingkasanMonitoring':
+        data = getRingkasanMonitoring(e.parameter.token);
+        break;
+      case 'getSatuanListAdmin':
+        data = getSatuanListAdmin(e.parameter.token);
+        break;
       case 'getDataBarangList':
         data = getDataBarangList(e.parameter.token, e.parameter);
         break;
@@ -303,6 +315,12 @@ function doPost(e) {
         break;
       case 'updateStatusKategoriAktif':
         data = updateStatusKategoriAktif(body);
+        break;
+      case 'addSatuan':
+        data = addSatuan(body);
+        break;
+      case 'updateStatusSatuanAktif':
+        data = updateStatusSatuanAktif(body);
         break;
       case 'addBarang':
         data = addBarang(body);

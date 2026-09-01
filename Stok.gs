@@ -20,7 +20,10 @@
  *
  *    18_STOK_BARANG
  *    ID_BARANG | KODE_BARANG | NAMA_BARANG | ID_KATEGORI | SATUAN |
- *    STOK_MINIMUM | STOK_SAAT_INI | AKTIF | KETERANGAN | DIBUAT_PADA
+ *    STOK_MINIMUM | STOK_SAAT_INI | AKTIF | KETERANGAN | DIBUAT_PADA | SUBKATEGORI
+ *    -- SUBKATEGORI (BARU) sengaja di kolom PALING AKHIR, bukan setelah
+ *       ID_KATEGORI, supaya tidak menggeser posisi kolom STOK_SAAT_INI dkk
+ *       yang sudah dipakai fungsi transaksi di bawah.
  *
  *    19_STOK_TRANSAKSI
  *    ID_TRANSAKSI | NOMOR_TRANSAKSI | TANGGAL | JENIS | SUMBER_TUJUAN |
@@ -29,6 +32,11 @@
  *    20_STOK_TRANSAKSI_DETAIL
  *    ID_DETAIL | ID_TRANSAKSI | NOMOR_TRANSAKSI | ID_BARANG | NAMA_BARANG |
  *    SATUAN | JUMLAH | STOK_SEBELUM | STOK_SESUDAH
+ *
+ *    23_STOK_SATUAN (BARU)
+ *    ID_SATUAN | NAMA_SATUAN | AKTIF
+ *    -- Master satuan TERKONTROL. Barang WAJIB pilih dari daftar ini,
+ *       admin tidak boleh ketik bebas ("kg"/"Kg"/"kilogram" dianggap beda).
  *
  * ==================================================================
  * BELUM diimplementasikan pada tahap ini (sesuai arahan: jangan
@@ -49,6 +57,7 @@ function getStokKategoriSheet() { return getSheet(NAMA_SHEET.STOK_KATEGORI); }
 function getStokBarangSheet() { return getSheet(NAMA_SHEET.STOK_BARANG); }
 function getStokTransaksiSheet() { return getSheet(NAMA_SHEET.STOK_TRANSAKSI); }
 function getStokDetailSheet() { return getSheet(NAMA_SHEET.STOK_TRANSAKSI_DETAIL); }
+function getStokSatuanSheet() { return getSheet(NAMA_SHEET.STOK_SATUAN); }
 
 // ------------------------------------------------------------
 // PERMISSION — dua tingkat, TIDAK mengubah Admin.gs / Akun.gs sama sekali
@@ -131,6 +140,73 @@ function generateNomorTransaksi_(sheet, jenis) {
 }
 
 // ------------------------------------------------------------
+// MASTER SATUAN (BARU) — daftar terkontrol, admin/petugas tidak boleh
+// ketik bebas. Sengaja tidak bisa dihapus permanen (hanya nonaktif),
+// konsisten dengan pola Kategori/Lokasi -- data yang sudah terlanjur
+// dipakai barang lain tidak boleh hilang begitu saja.
+// ------------------------------------------------------------
+
+function getSatuanList(token) {
+  requireStokAccess_(token);
+  return sheetToObjects(getStokSatuanSheet())
+    .filter(s => String(s.AKTIF).toUpperCase() !== 'NONAKTIF')
+    .map(s => ({ id: s.ID_SATUAN, nama: s.NAMA_SATUAN }));
+}
+
+function getSatuanListAdmin(token) {
+  requireStokAdmin_(token);
+  return sheetToObjects(getStokSatuanSheet()).map(s => ({
+    id: s.ID_SATUAN, nama: s.NAMA_SATUAN, aktif: String(s.AKTIF).toUpperCase() !== 'NONAKTIF'
+  }));
+}
+
+function generateIdSatuan_(sheet) {
+  const data = sheet.getDataRange().getValues();
+  let max = 0;
+  for (let i = 1; i < data.length; i++) {
+    const cocok = String(data[i][0] || '').match(/^STN(\d+)$/i);
+    if (cocok) max = Math.max(max, parseInt(cocok[1], 10));
+  }
+  return 'STN' + String(max + 1).padStart(3, '0');
+}
+
+function addSatuan(body) {
+  requireStokAdmin_(body.token);
+  const nama = sanitize(body.nama);
+  if (!nama) throw new Error('Nama satuan wajib diisi.');
+
+  const sheet = getStokSatuanSheet();
+  const sudahAda = sheetToObjects(sheet).some(s => String(s.NAMA_SATUAN).toLowerCase() === nama.toLowerCase());
+  if (sudahAda) throw new Error('Satuan "' + nama + '" sudah ada.');
+
+  const id = generateIdSatuan_(sheet);
+  sheet.appendRow([id, nama, 'AKTIF']);
+  return { id: id, nama: nama };
+}
+
+function updateStatusSatuanAktif(body) {
+  requireStokAdmin_(body.token);
+  const id = sanitize(body.id);
+  const aktif = !!body.aktif;
+  const sheet = getStokSatuanSheet();
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === id) {
+      sheet.getRange(i + 1, 3).setValue(aktif ? 'AKTIF' : 'NONAKTIF');
+      return { success: true };
+    }
+  }
+  throw new Error('Satuan tidak ditemukan.');
+}
+
+/** Dipakai addBarang/updateBarang: pastikan satuan yang dikirim benar-benar ada & aktif di master. */
+function satuanValid_(namaSatuan) {
+  return sheetToObjects(getStokSatuanSheet()).some(s =>
+    s.NAMA_SATUAN === namaSatuan && String(s.AKTIF).toUpperCase() !== 'NONAKTIF'
+  );
+}
+
+// ------------------------------------------------------------
 // KATEGORI
 // ------------------------------------------------------------
 
@@ -209,6 +285,7 @@ function getDataBarangList(token, params) {
       kode: b.KODE_BARANG,
       nama: b.NAMA_BARANG,
       idKategori: b.ID_KATEGORI,
+      subkategori: b.SUBKATEGORI || '',
       namaKategori: namaKategoriMap[b.ID_KATEGORI] || '-',
       satuan: b.SATUAN,
       stok: stok,
@@ -263,6 +340,7 @@ function getDetailBarang(token, idBarang) {
     kode: b.KODE_BARANG,
     nama: b.NAMA_BARANG,
     idKategori: b.ID_KATEGORI,
+    subkategori: b.SUBKATEGORI || '',
     namaKategori: kategori ? kategori.NAMA_KATEGORI : '-',
     satuan: b.SATUAN,
     stok: stok,
@@ -280,6 +358,7 @@ function addBarang(body) {
   requireStokAdmin_(body.token);
   const nama = sanitize(body.nama);
   const idKategori = sanitize(body.idKategori);
+  const subkategori = sanitize(body.subkategori);
   const satuan = sanitize(body.satuan);
   const stokMinimum = Number(body.stokMinimum) || 0;
   const stokAwal = Number(body.stokAwal) || 0;
@@ -287,12 +366,13 @@ function addBarang(body) {
   if (!nama) throw new Error('Nama barang wajib diisi.');
   if (!idKategori) throw new Error('Kategori wajib dipilih.');
   if (!satuan) throw new Error('Satuan wajib dipilih.');
+  if (!satuanValid_(satuan)) throw new Error('Satuan "' + satuan + '" tidak ada di Master Satuan. Pilih dari daftar yang tersedia, atau tambahkan dulu di Kelola Satuan.');
   if (stokMinimum < 0) throw new Error('Stok minimum tidak boleh negatif.');
   if (stokAwal < 0) throw new Error('Stok awal tidak boleh negatif.');
 
   const sheet = getStokBarangSheet();
   const id = generateIdBarang_(sheet);
-  sheet.appendRow([id, id, nama, idKategori, satuan, stokMinimum, stokAwal, 'AKTIF', sanitize(body.keterangan), new Date()]);
+  sheet.appendRow([id, id, nama, idKategori, satuan, stokMinimum, stokAwal, 'AKTIF', sanitize(body.keterangan), new Date(), subkategori]);
   return { id: id, nama: nama };
 }
 
@@ -301,6 +381,7 @@ function updateBarang(body) {
   const id = sanitize(body.id);
   const nama = sanitize(body.nama);
   const idKategori = sanitize(body.idKategori);
+  const subkategori = sanitize(body.subkategori);
   const satuan = sanitize(body.satuan);
   const stokMinimum = Number(body.stokMinimum) || 0;
 
@@ -308,6 +389,7 @@ function updateBarang(body) {
   if (!nama) throw new Error('Nama barang wajib diisi.');
   if (!idKategori) throw new Error('Kategori wajib dipilih.');
   if (!satuan) throw new Error('Satuan wajib dipilih.');
+  if (!satuanValid_(satuan)) throw new Error('Satuan "' + satuan + '" tidak ada di Master Satuan. Pilih dari daftar yang tersedia, atau tambahkan dulu di Kelola Satuan.');
   if (stokMinimum < 0) throw new Error('Stok minimum tidak boleh negatif.');
 
   const sheet = getStokBarangSheet();
@@ -319,6 +401,7 @@ function updateBarang(body) {
       sheet.getRange(i + 1, 5).setValue(satuan);
       sheet.getRange(i + 1, 6).setValue(stokMinimum);
       sheet.getRange(i + 1, 9).setValue(sanitize(body.keterangan));
+      sheet.getRange(i + 1, 11).setValue(subkategori);
       return { success: true };
     }
   }

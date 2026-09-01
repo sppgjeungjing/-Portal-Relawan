@@ -47,6 +47,10 @@
     inputKategoriKeterangan: document.getElementById('inputKategoriKeterangan'),
     tbodyStokKategori: document.getElementById('tbodyStokKategori'),
 
+    formTambahSatuan: document.getElementById('formTambahSatuan'),
+    inputSatuanBaru: document.getElementById('inputSatuanBaru'),
+    tbodyStokSatuan: document.getElementById('tbodyStokSatuan'),
+
     selectRelawanAkses: document.getElementById('selectRelawanAkses'),
     btnTambahPetugas: document.getElementById('btnTambahPetugas'),
     tbodyPetugasStok: document.getElementById('tbodyPetugasStok'),
@@ -57,6 +61,7 @@
     modalBarangId: document.getElementById('modalBarangId'),
     modalBarangNama: document.getElementById('modalBarangNama'),
     modalBarangKategori: document.getElementById('modalBarangKategori'),
+    modalBarangSubkategori: document.getElementById('modalBarangSubkategori'),
     modalBarangSatuan: document.getElementById('modalBarangSatuan'),
     modalBarangMinimum: document.getElementById('modalBarangMinimum'),
     modalBarangStokAwal: document.getElementById('modalBarangStokAwal'),
@@ -76,7 +81,7 @@
 
   if (!el.tabBtn) return; // panel Stok tidak ada di halaman ini -- aman keluar
 
-  const cache = { kategori: [], barang: [], relawanSemua: [] };
+  const cache = { kategori: [], satuan: [], barang: [], relawanSemua: [] };
   let sudahInit = false;
 
   function token() { return window.sppgAdminToken; }
@@ -94,7 +99,7 @@
 
       if (btn.dataset.sub === 'ringkasan') muatDashboard();
       else if (btn.dataset.sub === 'barang') muatDataBarang();
-      else if (btn.dataset.sub === 'kategori') muatKategoriAdmin();
+      else if (btn.dataset.sub === 'kategori') { muatKategoriAdmin(); muatSatuanAdmin(); }
       else if (btn.dataset.sub === 'akses') muatHakAkses();
       // 'masuk' & 'keluar': cukup pastikan minimal 1 baris item ada
       else if (btn.dataset.sub === 'masuk' && !el.masukDaftarItem.children.length) tambahBarisItem_(el.masukDaftarItem);
@@ -115,7 +120,7 @@
 
   async function initStok() {
     try {
-      await muatKategoriUntukDropdown();
+      await Promise.all([muatKategoriUntukDropdown(), muatSatuanUntukDropdown()]);
       await muatDashboard();
     } catch (err) {
       // Diam-diam saja di init awal -- pesan error akan tetap muncul saat user benar-benar buka tab Stok.
@@ -148,13 +153,19 @@
   }
 
   // --------------------------------------------------------
-  // KATEGORI (dropdown ringan, dipakai form Tambah/Edit Barang & filter)
+  // KATEGORI + SATUAN (dropdown ringan, dipakai form Tambah/Edit Barang & filter)
   // --------------------------------------------------------
   async function muatKategoriUntukDropdown() {
     cache.kategori = await apiGet('getKategoriBarang', { token: token() });
     const opsi = cache.kategori.map(k => `<option value="${escapeHtml(k.id)}">${escapeHtml(k.nama)}</option>`).join('');
     el.stokFilterKategori.innerHTML = '<option value="">Semua Kategori</option>' + opsi;
     el.modalBarangKategori.innerHTML = '<option value="">Pilih Kategori</option>' + opsi;
+  }
+
+  async function muatSatuanUntukDropdown() {
+    cache.satuan = await apiGet('getSatuanList', { token: token() });
+    el.modalBarangSatuan.innerHTML = '<option value="">Pilih Satuan</option>' +
+      cache.satuan.map(s => `<option value="${escapeHtml(s.nama)}">${escapeHtml(s.nama)}</option>`).join('');
   }
 
   // --------------------------------------------------------
@@ -200,6 +211,46 @@
   });
 
   // --------------------------------------------------------
+  // SATUAN (kelola, Admin) — master terkontrol
+  // --------------------------------------------------------
+  async function muatSatuanAdmin() {
+    el.tbodyStokSatuan.innerHTML = '<tr><td colspan="3"><div class="empty-state">Memuat data...</div></td></tr>';
+    try {
+      const list = await apiGet('getSatuanListAdmin', { token: token() });
+      if (!list.length) { el.tbodyStokSatuan.innerHTML = '<tr><td colspan="3"><div class="empty-state">Belum ada satuan.</div></td></tr>'; return; }
+      el.tbodyStokSatuan.innerHTML = list.map(s => `
+        <tr>
+          <td>${escapeHtml(s.nama)}</td>
+          <td>${s.aktif ? '<span class="stok-badge stok-badge-aman">Aktif</span>' : '<span class="stok-badge stok-badge-habis">Nonaktif</span>'}</td>
+          <td><button type="button" class="btn-mini" data-toggle-satuan="${escapeHtml(s.id)}" data-aktif="${s.aktif ? '0' : '1'}">${s.aktif ? 'Nonaktifkan' : 'Aktifkan'}</button></td>
+        </tr>`).join('');
+      el.tbodyStokSatuan.querySelectorAll('[data-toggle-satuan]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            await apiPost('updateStatusSatuanAktif', { token: token(), id: btn.dataset.toggleSatuan, aktif: btn.dataset.aktif === '1' });
+            showSuccess('Status satuan diperbarui.');
+            await Promise.all([muatSatuanAdmin(), muatSatuanUntukDropdown()]);
+          } catch (err) { showError(err.message); }
+        });
+      });
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  el.formTambahSatuan.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await apiPost('addSatuan', { token: token(), nama: el.inputSatuanBaru.value.trim() });
+      el.inputSatuanBaru.value = '';
+      showSuccess('Satuan ditambahkan.');
+      await Promise.all([muatSatuanAdmin(), muatSatuanUntukDropdown()]);
+    } catch (err) {
+      showError(err.message);
+    }
+  });
+
+  // --------------------------------------------------------
   // DATA BARANG
   // --------------------------------------------------------
   async function muatDataBarang() {
@@ -217,7 +268,7 @@
         <tr>
           <td>${escapeHtml(b.kode)}</td>
           <td>${escapeHtml(b.nama)}</td>
-          <td>${escapeHtml(b.namaKategori)}</td>
+          <td>${escapeHtml(b.namaKategori)}${b.subkategori ? ' <span style="color:var(--color-text-muted);font-size:11.5px;">· ' + escapeHtml(b.subkategori) + '</span>' : ''}</td>
           <td>${b.stok} ${escapeHtml(b.satuan)}</td>
           <td>${b.stokMinimum} ${escapeHtml(b.satuan)}</td>
           <td><span class="stok-badge stok-badge-${b.status.toLowerCase()}">${b.status === 'AMAN' ? '🟢' : b.status === 'MENIPIS' ? '🟡' : '🔴'} ${b.status}</span></td>
@@ -251,6 +302,7 @@
       el.modalBarangId.value = barang.id;
       el.modalBarangNama.value = barang.nama;
       el.modalBarangKategori.value = barang.idKategori;
+      el.modalBarangSubkategori.value = barang.subkategori || '';
       el.modalBarangSatuan.value = barang.satuan;
       el.modalBarangMinimum.value = barang.stokMinimum;
       el.modalBarangStokAwal.style.display = 'none'; // stok tidak diedit langsung di sini -- hanya lewat transaksi
@@ -273,6 +325,7 @@
       id: el.modalBarangId.value,
       nama: el.modalBarangNama.value.trim(),
       idKategori: el.modalBarangKategori.value,
+      subkategori: el.modalBarangSubkategori.value.trim(),
       satuan: el.modalBarangSatuan.value,
       stokMinimum: Number(el.modalBarangMinimum.value),
       stokAwal: Number(el.modalBarangStokAwal.value || 0),
@@ -297,7 +350,7 @@
     try {
       const d = await apiGet('getDetailBarang', { token: token(), idBarang });
       el.detailBarangNama.textContent = d.nama;
-      el.detailBarangSub.textContent = d.kode + ' · ' + d.namaKategori;
+      el.detailBarangSub.textContent = d.kode + ' · ' + d.namaKategori + (d.subkategori ? ' · ' + d.subkategori : '');
       el.detailBarangStok.textContent = d.stok + ' ' + d.satuan;
       el.detailBarangMinimum.textContent = d.stokMinimum + ' ' + d.satuan;
       el.detailBarangTotalMasuk.textContent = d.totalMasuk + ' ' + d.satuan;
