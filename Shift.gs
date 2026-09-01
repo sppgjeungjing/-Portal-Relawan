@@ -113,6 +113,37 @@ function apakahTerlambatShiftAware_(idRelawan, idOperasional, jamString) {
   return apakahTerlambat(jamString);
 }
 
+/**
+ * Menandai seberapa mepet pengajuan Izin/Sakit dibanding jam shift relawan
+ * (Fase 4). BUKAN penolakan -- pengajuan tetap selalu diterima, ini
+ * murni penanda buat Admin. Kalau modul Shift/data shift belum ada,
+ * fallback ke JAM_MASUK_STANDAR global.
+ *
+ * CATATAN keterbatasan: perhitungan pakai jam-di-hari-yang-sama (belum
+ * menghitung lintas tengah malam secara presisi) -- cukup akurat untuk
+ * penanda "mepet/telat", tidak dipakai untuk keputusan otomatis apa pun.
+ *
+ * @return 'TEPAT_WAKTU' | 'MEPET' | 'TELAT'
+ */
+function statusKetepatanPengajuanIzin_(idRelawan, idOperasional) {
+  let jamMasukShift = JAM_MASUK_STANDAR;
+  if (typeof resolveShiftUntukRelawan_ === 'function') {
+    try {
+      const shift = resolveShiftUntukRelawan_(idRelawan, idOperasional);
+      if (shift && shift.jamMasuk) jamMasukShift = shift.jamMasuk;
+    } catch (e) { /* fallback ke JAM_MASUK_STANDAR di atas */ }
+  }
+
+  const jamSekarangStr = Utilities.formatDate(new Date(), ZONA_WAKTU, 'HH:mm');
+  const [hNow, mNow] = jamSekarangStr.split(':').map(Number);
+  const [hShift, mShift] = jamMasukShift.split(':').map(Number);
+  const selisihMenit = (hShift * 60 + mShift) - (hNow * 60 + mNow);
+
+  if (selisihMenit < 0) return 'TELAT';
+  if (selisihMenit < BATAS_JAM_PENGAJUAN_IZIN_SEBELUM_SHIFT * 60) return 'MEPET';
+  return 'TEPAT_WAKTU';
+}
+
 // ------------------------------------------------------------
 // SHIFT DIVISI — CRUD (Admin)
 // ------------------------------------------------------------

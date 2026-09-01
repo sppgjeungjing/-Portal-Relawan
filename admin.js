@@ -476,7 +476,7 @@
         <td>${escapeHtml(r.jamMasuk || '–')}</td>
         <td>${escapeHtml(r.jamPulang || '–')}</td>
         <td>${statusBadge(r.status)}</td>
-        <td>${escapeHtml(r.keterangan || '–')}</td>
+        <td>${escapeHtml(r.keterangan || '–')}${labelStatusPengajuan_(r.statusPengajuan)}</td>
         <td style="font-size:12px;">${escapeHtml(r.lokasiMasuk || '–')}</td>
         <td style="font-size:12px;">${escapeHtml(r.lokasiPulang || '–')}</td>
         <td>${buktiFotoCell_(r)}</td>
@@ -496,6 +496,14 @@
   function statusBadge(status) {
     const map = { HADIR: 'hadir', TERLAMBAT: 'terlambat', IZIN: 'izin', SAKIT: 'sakit', 'BELUM ABSEN': 'belum-absen' };
     return `<span class="badge ${map[status] || 'belum-absen'}">${escapeHtml(status)}</span>`;
+  }
+
+  // Fase 4: penanda seberapa mepet pengajuan Izin/Sakit dibanding jam shift.
+  // Murni informasi buat Admin -- tidak mengubah status HADIR/IZIN/dst sama sekali.
+  function labelStatusPengajuan_(statusPengajuan) {
+    if (statusPengajuan === 'MEPET') return ' <span class="stok-badge stok-badge-menipis" title="Diajukan mendekati jam shift">⚠️ Mepet</span>';
+    if (statusPengajuan === 'TELAT') return ' <span class="stok-badge stok-badge-habis" title="Diajukan setelah jam shift seharusnya mulai">⏰ Telat diajukan</span>';
+    return '';
   }
 
   el.btnExportHarian.addEventListener('click', () => {

@@ -47,6 +47,12 @@ const JAM_MASUK_STANDAR = '07:00';
 // >>> UBAH ANGKA INI SESUAI KEBIJAKAN SPPG JEUNGJING <<<
 const TOLERANSI_KETERLAMBATAN_MENIT = 0;
 
+// Batas "aman" mengajukan Izin/Sakit sebelum jam shift mulai (jam).
+// Bukan penolakan -- pengajuan tetap diterima kapan pun, cuma ditandai
+// statusnya (TEPAT_WAKTU/MEPET/TELAT) supaya Admin tahu konteksnya.
+// >>> UBAH ANGKA INI SESUAI KEBIJAKAN SPPG JEUNGJING <<<
+const BATAS_JAM_PENGAJUAN_IZIN_SEBELUM_SHIFT = 3;
+
 // Mulai jam berapa (0-23, waktu ZONA_WAKTU) sistem boleh mulai mencocokkan
 // absen MASUK ke entri Kalender Operasional tanggal BESOK, kalau tanggal
 // HARI INI tidak/belum punya entri AKTIF. Ini untuk shift malam yang

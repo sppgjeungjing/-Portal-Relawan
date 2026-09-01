@@ -136,7 +136,7 @@ function submitAbsensi(body) {
     const nomorBaru = data.length;
     sheet.appendRow([
       nomorBaru, now, tanggalOperasional, jam, idRelawan, relawan.nama, relawan.divisi, jenis, keterangan,
-      idOperasional, lat, lng, akurasi, Math.round(jarak), statusLokasi, fileId
+      idOperasional, lat, lng, akurasi, Math.round(jarak), statusLokasi, fileId, ''
     ]);
     // Tulis ulang kolom TANGGAL & JAM sebagai teks murni — lihat catatan paksaKolomTeks_ di Utils.gs.
     const barisBaru = sheet.getLastRow();
@@ -211,9 +211,12 @@ function ajukanIzinSakit(body) {
     const now = new Date();
     const jamPengajuan = formatJam(now);
     const nomorBaru = data.length;
+    const statusPengajuan = typeof statusKetepatanPengajuanIzin_ === 'function'
+      ? statusKetepatanPengajuanIzin_(idRelawan, opHariIni.idOperasional)
+      : ''; // modul Shift belum ada -- kosongkan saja, jangan gagalkan pengajuan
     sheet.appendRow([
       nomorBaru, now, opHariIni.tanggal, jamPengajuan, idRelawan, relawan.nama, relawan.divisi, 'MASUK', jenisPengajuan,
-      opHariIni.idOperasional, '', '', '', '', '', ''
+      opHariIni.idOperasional, '', '', '', '', '', '', statusPengajuan
     ]);
     const barisBaru = sheet.getLastRow();
     paksaKolomTeks_(sheet, barisBaru, 3);
@@ -492,6 +495,7 @@ function getRekapHarian(tanggal) {
       jamPulang: recPulang ? recPulang.JAM : '',
       status: status,
       keterangan: keterangan,
+      statusPengajuan: recIzinSakit ? (recIzinSakit.STATUS_PENGAJUAN || '') : '',
       lokasiMasuk: buildLokasiRingkas_(recMasuk),
       lokasiPulang: buildLokasiRingkas_(recPulang),
       fotoMasukUrl: recMasuk && recMasuk.FOTO_REFERENCE ? urlFotoReference_(recMasuk.FOTO_REFERENCE) : null,
