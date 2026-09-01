@@ -190,6 +190,33 @@ async function apiHealthCheck() {
 }
 
 // ------------------------------------------------------------
+// CACHE RINGAN (opsional) — Fase 4, soal keluhan "kebanyakan muter"
+// PERLU DIBACA: sebagian besar rasa lambat itu BUKAN bug yang bisa
+// dihilangkan total lewat kode -- ini Multi-Page App (tiap menu = HTML
+// terpisah, full reload browser), dan Google Apps Script Web App memang
+// punya jeda "cold start" + tiap halaman WAJIB validasi sesi ulang ke
+// server demi keamanan (itu kesengajaan, bukan kelalaian). Yang bisa
+// dikurangi: request BERULANG untuk data yang jarang berubah (daftar
+// divisi, kategori, dst). apiGetCached() di bawah opsional -- panggil ini
+// ketimbang apiGet() biasa untuk data semacam itu; apiGet() lama TIDAK
+// diubah sama sekali jadi tidak ada resiko ke pemanggilan yang sudah ada.
+// ------------------------------------------------------------
+async function apiGetCached(action, params, cacheMs) {
+  const kunci = 'sppg_cache_' + action + ':' + JSON.stringify(params || {});
+  try {
+    const mentah = sessionStorage.getItem(kunci);
+    if (mentah) {
+      const entri = JSON.parse(mentah);
+      if (Date.now() - entri.waktu < cacheMs) return entri.data;
+    }
+  } catch (e) { /* sessionStorage tidak tersedia/penuh -- lanjut ambil dari network seperti biasa */ }
+
+  const data = await apiGet(action, params);
+  try { sessionStorage.setItem(kunci, JSON.stringify({ data: data, waktu: Date.now() })); } catch (e) { /* diamkan, cache murni optimisasi */ }
+  return data;
+}
+
+// ------------------------------------------------------------
 // PWA — pendaftaran service worker (Fase 2)
 // Aditif, tidak mengubah fungsi lain di atas. Gagal daftar (mis. browser
 // lama/tidak dukung) dibiarkan diam-diam -- situs tetap berjalan normal

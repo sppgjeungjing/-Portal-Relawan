@@ -11,7 +11,7 @@ function parseTanggalDMY(tanggalStr) {
 }
 
 function badgeClassUntukStatus(status) {
-  const peta = { 'Hadir': 'hadir', 'Terlambat': 'terlambat', 'Izin': 'izin', 'Sakit': 'sakit', 'Tidak Hadir': 'tidak-hadir' };
+  const peta = { 'Hadir': 'hadir', 'Terlambat': 'terlambat', 'Izin': 'izin', 'Sakit': 'sakit', 'Tidak Hadir': 'tidak-hadir', 'Tidak Ada Jadwal': 'tidak-ada-jadwal' };
   return peta[status] || 'tidak-hadir';
 }
 

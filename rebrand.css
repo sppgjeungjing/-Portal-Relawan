@@ -1,0 +1,35 @@
+/* ================================================================
+   REBRANDING HEADER — "PORTAL SPPG JEUNGJING" (Fase 2)
+   File terpisah, aditif — tidak mengubah app-shell.css/style.css/portal.css
+   yang sudah ada. Cukup di-link setelah file CSS lain di setiap halaman.
+   ================================================================ */
+
+.shell-topbar-brand--portal {
+  display: flex; align-items: center; gap: 10px;
+}
+.shell-topbar-brand--portal .shell-topbar-logo-bgn,
+.shell-topbar-brand--portal .shell-topbar-logo-sppg {
+  height: 32px; width: auto; flex-shrink: 0;
+}
+.shell-topbar-brand--portal .shell-topbar-brand-text {
+  display: flex; flex-direction: column; line-height: 1.15;
+}
+.shell-topbar-brand--portal .shell-topbar-brand-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--color-text-muted, #6b7688);
+  text-transform: uppercase;
+}
+.shell-topbar-brand--portal strong {
+  font-size: 14.5px; font-weight: 800; color: var(--color-navy, #12294d); letter-spacing: .01em;
+}
+
+/* Versi ringkas mobile: sembunyikan logo SPPG kanan kalau layar sempit,
+   biar topbar tidak sesak (BGN + nama tetap prioritas utama). */
+@media (max-width: 420px) {
+  .shell-topbar-brand--portal .shell-topbar-logo-sppg { display: none; }
+}
+
+/* Badge status baru untuk Riwayat Absensi (Fase 4) — netral, bukan merah,
+   karena "Tidak Ada Jadwal" bukan pelanggaran, cuma memang tidak bertugas. */
+.riwayat-badge.tidak-ada-jadwal {
+  background: #eef0f3; color: #5b6472; border: 1px solid #d7dbe1;
+}

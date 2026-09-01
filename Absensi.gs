@@ -654,17 +654,42 @@ function simpanRekapDuaMingguKeSheet(periodeAwal, periodeAkhir, rekap) {
 // RIWAYAT ABSENSI RELAWAN — TIDAK DIUBAH
 // ------------------------------------------------------------
 
+// ------------------------------------------------------------
+// RIWAYAT ABSENSI RELAWAN
+// PERBAIKAN (Fase 4): sebelumnya berbasis 14 hari KALENDER mundur apa
+// adanya -- tanggal yang bukan hari operasional (libur/belum ada jadwal)
+// ikut ditandai "Tidak Hadir" secara keliru. Sekarang berbasis Kalender
+// Operasional yang Admin buat (2 periode terbaru), dan membedakan:
+//   - "Tidak Hadir"      : ada shift/penugasan tapi tidak ada presensi
+//   - "Tidak Ada Jadwal" : relawan memang tidak diketahui bertugas hari
+//                          itu (sesuai §53 -- jangan dianggap tidak hadir
+//                          kalau tidak ada shift/penugasan sama sekali)
+// Kalau modul Shift belum ada, otomatis fallback ke "Tidak Hadir" seperti
+// perilaku lama (aman, tidak breaking).
+// ------------------------------------------------------------
+
 function getRiwayatAbsensiRelawan(token) {
   const idRelawan = requireAuthRelawan(token);
   const semuaAbsensi = getAbsensiRows_();
   const milikSaya = semuaAbsensi.filter(a => a.ID_RELAWAN === idRelawan);
 
-  const hariIni = new Date();
-  const riwayat = [];
-  for (let i = 0; i < 14; i++) {
-    const d = new Date(hariIni.getFullYear(), hariIni.getMonth(), hariIni.getDate() - i);
-    const tgl = formatTanggal(d);
-    const recHariItu = milikSaya.filter(a => a.TANGGAL === tgl);
+  // 2 periode terbaru (getPeriodeListAdmin sudah urut terbaru dulu)
+  const periodeTerbaru = getPeriodeListAdmin().slice(0, 2);
+  const idPeriodeSet = {};
+  periodeTerbaru.forEach(p => { idPeriodeSet[p.id] = true; });
+
+  const hariIniIso = tanggalSheetKeIso_(formatTanggal(new Date()));
+
+  const daftarOperasional = getKalenderRows_()
+    .filter(k => idPeriodeSet[k.ID_PERIODE] && String(k.STATUS).toUpperCase() === 'AKTIF')
+    .filter(k => {
+      const iso = tanggalSheetKeIso_(k.TANGGAL_OPERASIONAL);
+      return iso && iso <= hariIniIso; // riwayat = masa lalu, jangan tampilkan tanggal yang belum terjadi
+    })
+    .sort((a, b) => tanggalSheetKeIso_(b.TANGGAL_OPERASIONAL).localeCompare(tanggalSheetKeIso_(a.TANGGAL_OPERASIONAL)));
+
+  return daftarOperasional.map(k => {
+    const recHariItu = milikSaya.filter(a => a.ID_OPERASIONAL === k.ID_OPERASIONAL);
     const masuk = recHariItu.find(a => a.JENIS_ABSENSI === 'MASUK');
     const pulang = recHariItu.find(a => a.JENIS_ABSENSI === 'PULANG');
 
@@ -678,17 +703,19 @@ function getRiwayatAbsensiRelawan(token) {
       status = (typeof apakahTerlambatShiftAware_ === 'function' ? apakahTerlambatShiftAware_(idRelawan, masuk.ID_OPERASIONAL, masuk.JAM) : apakahTerlambat(masuk.JAM)) ? 'Terlambat' : 'Hadir';
       keterangan = masuk.KETERANGAN || '';
     } else {
-      status = 'Tidak Hadir';
+      const adaShift = typeof resolveShiftUntukRelawan_ === 'function'
+        ? !!resolveShiftUntukRelawan_(idRelawan, k.ID_OPERASIONAL)
+        : null; // modul Shift belum dipasang -- tidak bisa dipastikan, fallback ke perilaku lama
+      status = (adaShift === false) ? 'Tidak Ada Jadwal' : 'Tidak Hadir';
     }
 
-    riwayat.push({
-      tanggal: tgl,
+    return {
+      tanggal: k.TANGGAL_OPERASIONAL,
+      hari: k.HARI,
       jamMasuk: masuk ? masuk.JAM : '',
       jamPulang: pulang ? pulang.JAM : '',
       status: status,
       keterangan: keterangan
-    });
-  }
-
-  return riwayat;
+    };
+  });
 }

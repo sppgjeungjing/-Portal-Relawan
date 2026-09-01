@@ -41,6 +41,11 @@ const NAMA_SHEET = {
 // >>> UBAH ANGKA INI SESUAI JAM OPERASIONAL SPPG JEUNGJING YANG SEBENARNYA <<<
 const JAM_MASUK_STANDAR = '07:00';
 
+// Toleransi keterlambatan (menit) -- relawan baru dianggap TERLAMBAT kalau
+// jam presensinya melewati (jam standar/shift + toleransi ini).
+// >>> UBAH ANGKA INI SESUAI KEBIJAKAN SPPG JEUNGJING <<<
+const TOLERANSI_KETERLAMBATAN_MENIT = 0;
+
 // Mulai jam berapa (0-23, waktu ZONA_WAKTU) sistem boleh mulai mencocokkan
 // absen MASUK ke entri Kalender Operasional tanggal BESOK, kalau tanggal
 // HARI INI tidak/belum punya entri AKTIF. Ini untuk shift malam yang
@@ -196,16 +201,14 @@ function paksaKolomTeks_(sheet, baris, kolom, jumlahBaris) {
 }
 
 /** Mengecek apakah suatu jam ("HH:mm" atau "HH:mm:ss") melewati JAM_MASUK_STANDAR. */
-/** Bandingkan jamString terhadap batas HH:mm mana pun (dipakai apakahTerlambat & modul Shift). */
+/** Bandingkan jamString terhadap batas HH:mm mana pun, dengan toleransi TOLERANSI_KETERLAMBATAN_MENIT. */
 function apakahTerlambatDenganBatas_(jamString, batasHHmm) {
   if (!jamString || !batasHHmm) return false;
-  const bagian = String(jamString).split(':');
-  const jam = Number(bagian[0]);
-  const menit = Number(bagian[1]);
-  const batas = String(batasHHmm).split(':').map(Number);
-  if (jam > batas[0]) return true;
-  if (jam === batas[0] && menit > batas[1]) return true;
-  return false;
+  const bagianJam = String(jamString).split(':');
+  const menitAktual = Number(bagianJam[0]) * 60 + Number(bagianJam[1]);
+  const bagianBatas = String(batasHHmm).split(':').map(Number);
+  const menitBatas = bagianBatas[0] * 60 + bagianBatas[1] + TOLERANSI_KETERLAMBATAN_MENIT;
+  return menitAktual > menitBatas;
 }
 
 function apakahTerlambat(jamString) {
