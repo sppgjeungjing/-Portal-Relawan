@@ -18,7 +18,7 @@ const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfyc
 // sesuai "PROMPT MASTER FINAL". Ganti setelah deploy Apps Script SIPANDU
 // (lihat PANDUAN-DEPLOY-SIPANDU.md).
 // ============================================================
-const SIPANDU_API_URL = 'GANTI_DENGAN_URL_WEB_APP_SIPANDU';
+const SIPANDU_API_URL = 'https://script.google.com/macros/s/AKfycbyMOXMtHP2MPGBiOwLQ3M_7l-CzNCN7FD_oMB7yFPXudoOUwDCvG9WOo9dwEPqW-bQizg/exec';
 
 // Set true sementara di perangkat Anda sendiri untuk melihat log setiap
 // request API (action, durasi, status) di Console browser — TIDAK PERNAH
