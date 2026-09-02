@@ -373,8 +373,9 @@
   // --------------------------------------------------------
   // BARANG MASUK / KELUAR — baris item dinamis (multi-item)
   // --------------------------------------------------------
-  function opsiBarang_() {
-    const opsi = cache.barang.map(b => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.nama)} (stok: ${b.stok} ${escapeHtml(b.satuan)})</option>`).join('');
+  function opsiBarang_(daftar) {
+    const sumber = daftar || cache.barang;
+    const opsi = sumber.map(b => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.nama)} (stok: ${b.stok} ${escapeHtml(b.satuan)})</option>`).join('');
     return '<option value="">Pilih barang...</option>' + opsi;
   }
 
@@ -388,10 +389,27 @@
     const baris = document.createElement('div');
     baris.className = 'stok-item-row';
     baris.innerHTML = `
+      <input type="text" class="stok-item-cari" placeholder="🔍 Cari ID/nama barang..." autocomplete="off">
       <select class="stok-item-barang">${opsiBarang_()}</select>
       <input type="number" class="stok-item-jumlah" placeholder="Jumlah" min="0.01" step="0.01">
       <button type="button" title="Hapus baris">🗑</button>`;
     baris.querySelector('button').addEventListener('click', () => baris.remove());
+
+    const inputCari = baris.querySelector('.stok-item-cari');
+    const select = baris.querySelector('.stok-item-barang');
+    inputCari.addEventListener('input', () => {
+      const kata = inputCari.value.trim().toLowerCase();
+      const nilaiTerpilihSebelumnya = select.value;
+      const hasil = !kata ? cache.barang : cache.barang.filter(b =>
+        String(b.id).toLowerCase().includes(kata) ||
+        String(b.nama).toLowerCase().includes(kata) ||
+        String(b.kode || '').toLowerCase().includes(kata)
+      );
+      select.innerHTML = opsiBarang_(hasil);
+      // Kalau barang yang sebelumnya dipilih masih ada di hasil filter, pertahankan pilihannya.
+      if (hasil.some(b => b.id === nilaiTerpilihSebelumnya)) select.value = nilaiTerpilihSebelumnya;
+    });
+
     container.appendChild(baris);
   }
 

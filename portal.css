@@ -560,8 +560,12 @@
 .stok-perhatian-row small { color: var(--color-text-muted); font-size: 12px; }
 
 .stok-item-row {
-  display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: center;
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center;
+  background: #f7f8fa; border-radius: var(--radius-sm); padding: 8px;
 }
+.stok-item-row .stok-item-cari { flex-basis: 100%; }
+.stok-item-row .stok-item-barang { flex: 2 1 160px; }
+.stok-item-row .stok-item-jumlah { flex: 1 1 80px; }
 .stok-item-row select, .stok-item-row input { width: 100%; box-sizing: border-box; }
 .stok-item-row button {
   border: none; background: var(--color-danger-bg); color: var(--color-danger);
