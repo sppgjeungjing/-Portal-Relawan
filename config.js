@@ -15,3 +15,4 @@ const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfyc
 // request API (action, durasi, status) di Console browser — TIDAK PERNAH
 // mencatat password/token. Selalu false saat production/dibagikan ke publik.
 const DEBUG_MODE = false;
+const SIPANDU_API_URL = 'https://script.google.com/macros/s/AKfycbyMOXMtHP2MPGBiOwLQ3M_7l-CzNCN7FD_oMB7yFPXudoOUwDCvG9WOo9dwEPqW-bQizg/exec';
