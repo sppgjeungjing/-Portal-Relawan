@@ -88,6 +88,7 @@
     <div class="chip-tabs" id="sipanduTabs">
       <button type="button" class="chip-tab active" data-sub="dashboard">Dashboard</button>
       <button type="button" class="chip-tab" data-sub="wo">Work Order</button>
+      <button type="button" class="chip-tab is-hidden" data-sub="hakakses" id="tabHakAkses">Hak Akses</button>
     </div>
 
     <!-- DASHBOARD -->
@@ -119,6 +120,12 @@
         <button type="button" class="btn-submit" id="btnBukaTambahWo">+ Buat Work Order</button>
       </div>
       <div id="woListWrap"><div class="empty-state">Memuat data...</div></div>
+    </div>
+
+    <!-- HAK AKSES (khusus role ADMIN) -->
+    <div class="sipandu-sub" id="sipanduSubHakakses" style="display:none;">
+      <p style="font-size:12.5px;color:var(--color-text-muted);margin:-4px 0 12px;">Assign role SIPANDU ke relawan yang sudah aktif di Portal. Relawan yang belum pernah di-assign tetap bisa lihat menu SIPANDU tapi ditolak begitu buka isinya.</p>
+      <div id="hakAksesListWrap"><div class="empty-state">Memuat data...</div></div>
     </div>
   </div>
 

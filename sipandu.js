@@ -60,15 +60,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let idWoTerbuka = null;
   let cacheMenu = [];
+  let cacheRoleList = [];
+  let profilSaya = null;
 
   // --------------------------------------------------------
   // Cek akses dulu lewat dashboard -- kalau ditolak, hentikan semua.
   // --------------------------------------------------------
   try {
     showLoading('Memeriksa akses SIPANDU...');
+    profilSaya = await sipanduApiGet('getSipanduProfilSaya', { token });
     await muatDashboard();
     hideLoading();
     el.konten.style.display = 'block';
+
+    if (profilSaya && profilSaya.role === 'ADMIN') {
+      document.getElementById('tabHakAkses').classList.remove('is-hidden');
+    }
   } catch (err) {
     hideLoading();
     el.ditolak.style.display = 'block';
@@ -88,6 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (btn.dataset.sub === 'dashboard') muatDashboard();
       else if (btn.dataset.sub === 'wo') muatDaftarWo();
+      else if (btn.dataset.sub === 'hakakses') muatHakAkses();
     });
   });
 
@@ -350,4 +358,57 @@ document.addEventListener('DOMContentLoaded', async () => {
       showError(err.message);
     }
   });
+
+  // --------------------------------------------------------
+  // HAK AKSES (khusus role ADMIN)
+  // --------------------------------------------------------
+  async function pastikanRoleListTermuat_() {
+    if (!cacheRoleList.length) {
+      cacheRoleList = await sipanduApiGet('getDaftarRoleSipandu', { token });
+    }
+  }
+
+  async function muatHakAkses() {
+    const wrap = document.getElementById('hakAksesListWrap');
+    wrap.innerHTML = '<div class="empty-state">Memuat data...</div>';
+    try {
+      await pastikanRoleListTermuat_();
+      const opsiRole = '<option value="">Belum diberi akses</option>' +
+        cacheRoleList.map(r => `<option value="${escapeHtml(r.kode)}">${escapeHtml(r.nama)}</option>`).join('');
+
+      const daftar = await sipanduApiGet('getDaftarRelawanUntukHakAkses', { token });
+      if (!daftar.length) { wrap.innerHTML = '<div class="empty-state">Tidak ada relawan aktif ditemukan.</div>'; return; }
+
+      wrap.innerHTML = daftar.map(r => `
+        <div class="sipandu-hakakses-row" data-id="${escapeHtml(r.id)}">
+          <span class="nama">${escapeHtml(r.nama)}</span>
+          <select class="select-role-hakakses">${opsiRole}</select>
+        </div>`).join('');
+
+      wrap.querySelectorAll('.sipandu-hakakses-row').forEach(row => {
+        const id = row.dataset.id;
+        const data = daftar.find(r => r.id === id);
+        const select = row.querySelector('.select-role-hakakses');
+        select.value = data.aktifDiSipandu ? data.roleSipandu : '';
+
+        select.addEventListener('change', async () => {
+          try {
+            if (!select.value) {
+              await sipanduApiPost('cabutSipanduUserRole', { token, idRelawan: id });
+              showSuccess('Akses ' + data.nama + ' dicabut dari SIPANDU.');
+            } else {
+              await sipanduApiPost('setSipanduUserRole', { token, idRelawan: id, nama: data.nama, role: select.value, aktif: true });
+              showSuccess('Role ' + data.nama + ' diatur jadi ' + select.value + '.');
+            }
+          } catch (err) {
+            showError(err.message);
+            await muatHakAkses();
+          }
+        });
+      });
+    } catch (err) {
+      wrap.innerHTML = '';
+      showError(err.message);
+    }
+  }
 });
