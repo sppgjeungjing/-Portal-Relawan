@@ -1,10 +1,10 @@
 // ============================================================
-// SPPG JEUNGJING — KONFIGURASI SISTEM
+// SPPG JEUNGJING — KONFIGURASI PORTAL
 // ============================================================
 
 // ============================================================
 // PORTAL RELAWAN
-// Backend utama untuk login, profil, absensi, jadwal, dll.
+// Aplikasi utama / portal besar
 // ============================================================
 
 const GOOGLE_APPS_SCRIPT_WEB_APP_URL =
@@ -13,8 +13,7 @@ const GOOGLE_APPS_SCRIPT_WEB_APP_URL =
 
 // ============================================================
 // SIPANDU
-// Backend SIPANDU yang dipanggil oleh menu SIPANDU
-// di dalam Portal Relawan.
+// Menu SIPANDU yang berada di dalam Portal Relawan
 // ============================================================
 
 const SIPANDU_API_URL =
@@ -22,7 +21,7 @@ const SIPANDU_API_URL =
 
 
 // ============================================================
-// DEBUG
+// SYSTEM
 // ============================================================
 
 const DEBUG_MODE = false;
