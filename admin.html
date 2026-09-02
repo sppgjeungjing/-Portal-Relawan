@@ -82,6 +82,7 @@
       <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelRelawan"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M15.5 14.7c2.6.4 4.5 2.3 4.5 5.3"/></svg></span><span>Relawan</span></button>
       <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelAkun"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg></span><span>Akun Relawan</span></button>
       <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelDivisi"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span><span>Kelola Divisi</span></button>
+      <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelRoleAkses"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 8-7 9-4-1-7-4.5-7-9V7l7-4z"/></svg></span><span>Role ASN &amp; Kepala SPPG</span></button>
       <p class="shell-nav-group-title">Absensi & Rekap</p>
       <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelHarian"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9z"/><path d="M9 12l2 2 4-4"/></svg></span><span>Rekap Harian</span></button>
       <button type="button" class="shell-nav-link admin-tab-btn" data-panel="panelDuaMinggu"><span class="icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span><span>Rekap 2 Minggu</span></button>
@@ -230,6 +231,21 @@
       <table>
         <thead><tr><th>Nama Divisi</th><th>Jumlah Relawan Aktif</th></tr></thead>
         <tbody id="tbodyDivisi"><tr><td colspan="2"><div class="empty-state">Memuat data...</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ROLE ASN & KEPALA SPPG (BARU) -->
+  <div class="admin-panel" id="panelRoleAkses">
+    <div class="shell-page-head">
+      <div class="shell-page-head-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 8-7 9-4-1-7-4.5-7-9V7l7-4z"/></svg></div>
+      <div><h1 style="font-size:18px;margin:0;color:var(--color-navy);">Role ASN &amp; Kepala SPPG</h1><p style="font-size:13px;margin:2px 0 0;color:var(--color-text-muted);">Assign role akun relawan untuk akses halaman Monitoring (baca-saja).</p></div>
+    </div>
+    <p style="font-size:12.5px;color:var(--color-text-muted);margin:-4px 0 12px;">Akun dengan role ASN/Kepala SPPG tetap login lewat akun relawannya sendiri, cuma dapat menu tambahan "Monitoring" (baca-saja, tidak bisa ubah data apa pun).</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nama</th><th>Role</th></tr></thead>
+        <tbody id="tbodyRoleAkses"><tr><td colspan="2"><div class="empty-state">Memuat data...</div></td></tr></tbody>
       </table>
     </div>
   </div>
@@ -834,6 +850,7 @@
 <script src="admin.js"></script>
 <script src="admin-stok.js"></script>
 <script src="admin-shift.js"></script>
+<script src="admin-role.js"></script>
 <script>document.addEventListener('DOMContentLoaded', function () { initShell({ storageKey: 'sppgSidebarCollapsedAdmin' }); });</script>
 </body>
 </html>
