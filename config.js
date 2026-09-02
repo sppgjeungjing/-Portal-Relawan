@@ -8,19 +8,11 @@
 // Contoh format URL yang benar:
 // https://script.google.com/macros/s/AKfycb......................../exec
 // ============================================================
-
-const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby5uuwdo0G-W22txE7eOSuHuFGc_XYnrhm7SyGvLsbXApJiJNE4eM5nuFYJ29uXM8yMIw/exec';
-
-// ============================================================
-// SIPANDU — Web App URL Apps Script TERPISAH (database Google Sheets
-// SIPANDU juga terpisah dari database ini). SIPANDU tetap 1 login yang
-// sama (sesi relawan) -- cuma backend & databasenya berdiri sendiri
-// sesuai "PROMPT MASTER FINAL". Ganti setelah deploy Apps Script SIPANDU
-// (lihat PANDUAN-DEPLOY-SIPANDU.md).
-// ============================================================
 const SIPANDU_API_URL = 'https://script.google.com/macros/s/AKfycbyMOXMtHP2MPGBiOwLQ3M_7l-CzNCN7FD_oMB7yFPXudoOUwDCvG9WOo9dwEPqW-bQizg/exec';
 
 // Set true sementara di perangkat Anda sendiri untuk melihat log setiap
 // request API (action, durasi, status) di Console browser — TIDAK PERNAH
 // mencatat password/token. Selalu false saat production/dibagikan ke publik.
 const DEBUG_MODE = false;
+
+const SIPANDU_API_URL = 'https://script.google.com/macros/s/AKfycbyMOXMtHP2MPGBiOwLQ3M_7l-CzNCN7FD_oMB7yFPXudoOUwDCvG9WOo9dwEPqW-bQizg/exec';
