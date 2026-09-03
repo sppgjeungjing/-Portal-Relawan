@@ -22,7 +22,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     monStokTotal: document.getElementById('monStokTotal'),
     monStokAman: document.getElementById('monStokAman'),
     monStokMenipis: document.getElementById('monStokMenipis'),
-    monStokHabis: document.getElementById('monStokHabis')
+    monStokHabis: document.getElementById('monStokHabis'),
+    monitoringSipanduWrap: document.getElementById('monitoringSipanduWrap'),
+    monitoringSipanduKosong: document.getElementById('monitoringSipanduKosong'),
+    monSipanduTotal: document.getElementById('monSipanduTotal'),
+    monSipanduDraft: document.getElementById('monSipanduDraft'),
+    monSipanduReady: document.getElementById('monSipanduReady'),
+    monSipanduSelesai: document.getElementById('monSipanduSelesai')
   };
 
   try {
@@ -42,6 +48,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       el.monitoringStokWrap.style.display = 'none';
       el.monitoringStokKosong.style.display = 'block';
+    }
+
+    if (d.sipandu) {
+      el.monSipanduTotal.textContent = d.sipandu.totalWorkOrder;
+      el.monSipanduDraft.textContent = d.sipandu.perStatus.DRAFT;
+      el.monSipanduReady.textContent = d.sipandu.perStatus.READY;
+      el.monSipanduSelesai.textContent = d.sipandu.perStatus.COMPLETED;
+    } else {
+      el.monitoringSipanduWrap.style.display = 'none';
+      el.monitoringSipanduKosong.style.display = 'block';
     }
 
     el.konten.style.display = 'block';

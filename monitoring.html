@@ -9,10 +9,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20260903b">
-<link rel="stylesheet" href="portal.css?v=20260903b">
-<link rel="stylesheet" href="app-shell.css?v=20260903b">
-<link rel="stylesheet" href="rebrand.css?v=20260903b">
+<link rel="stylesheet" href="style.css?v=20260903c">
+<link rel="stylesheet" href="portal.css?v=20260903c">
+<link rel="stylesheet" href="app-shell.css?v=20260903c">
+<link rel="stylesheet" href="rebrand.css?v=20260903c">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#12294d">
 </head>
@@ -99,10 +99,21 @@
         <div class="stok-summary-card stok-card-habis"><span id="monStokHabis">0</span><p>Stok Habis</p></div>
       </div>
     </div>
-    <div id="monitoringStokKosong" class="empty-state" style="display:none;">Modul Stok & Persediaan belum tersedia di Portal ini.</div>
+    <div id="monitoringStokKosong" class="empty-state" style="display:none;">Modul SIRAGA belum tersedia di Portal ini.</div>
+
+    <div id="monitoringSipanduWrap">
+      <p class="section-title">Ringkasan Operasional (SIPANDU)</p>
+      <div class="stok-summary-grid">
+        <div class="stok-summary-card"><span id="monSipanduTotal">0</span><p>Total Work Order</p></div>
+        <div class="stok-summary-card"><span id="monSipanduDraft">0</span><p>Draft</p></div>
+        <div class="stok-summary-card stok-card-menipis"><span id="monSipanduReady">0</span><p>Ready</p></div>
+        <div class="stok-summary-card stok-card-aman"><span id="monSipanduSelesai">0</span><p>Completed</p></div>
+      </div>
+    </div>
+    <div id="monitoringSipanduKosong" class="empty-state" style="display:none;">Modul SIPANDU belum tersambung ke Monitoring. Lihat panduan pemasangan.</div>
 
     <p style="font-size:12px;color:var(--color-text-muted);margin-top:24px;">
-      Catatan: halaman ini masih ringkasan dasar. Rincian per-divisi, filter periode, dan laporan lengkap (Informasi, Jadwal, Dokumen) menyusul di tahap pengembangan berikutnya.
+      Catatan: rincian per-divisi, filter periode, dan laporan lengkap (Informasi, Jadwal, Dokumen) menyusul di tahap pengembangan berikutnya.
     </p>
   </div>
 
@@ -121,11 +132,11 @@
   </div>
 </div>
 
-<script src="config.js?v=20260903b"></script>
-<script src="common.js?v=20260903b"></script>
-<script src="auth-relawan.js?v=20260903b"></script>
-<script src="app-shell.js?v=20260903b"></script>
-<script src="monitoring.js?v=20260903b"></script>
+<script src="config.js?v=20260903c"></script>
+<script src="common.js?v=20260903c"></script>
+<script src="auth-relawan.js?v=20260903c"></script>
+<script src="app-shell.js?v=20260903c"></script>
+<script src="monitoring.js?v=20260903c"></script>
 <script>document.addEventListener("DOMContentLoaded", bootRelawanShell);</script>
 </body>
 </html>
