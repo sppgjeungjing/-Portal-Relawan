@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     showLoading('Memuat dashboard...');
     const [profil, riwayat, notifikasi, informasi] = await Promise.all([
       apiGet('getProfilRelawan', { token: sesi.token }),
-      apiGet('getRiwayatAbsensiRelawan', { token: sesi.token }).catch(() => []),
+      apiGet('getRiwayatAbsensiRelawan', { token: sesi.token }).catch(() => ({ periode: null, items: [] })),
       apiGet('getNotifikasiRelawan', { token: sesi.token }).catch(() => []),
       apiGet('getInformasiRelawan', { token: sesi.token }).catch(() => [])
     ]);
@@ -33,9 +33,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     pill.classList.add(isAktif ? 'aktif' : 'nonaktif');
     pill.textContent = isAktif ? 'Akun Aktif' : 'Akun Tidak Aktif';
 
-    // ---- RINGKASAN ABSENSI (dihitung dari 14 hari riwayat, detail lengkap tetap di modul Absensi) ----
+    // ---- RINGKASAN ABSENSI (dihitung dari riwayat PERIODE AKTIF; detail lengkap tetap di modul Absensi) ----
+    // Catatan: endpoint riwayat sekarang mengembalikan { periode, items },
+    // bukan array polos seperti versi lama.
+    const daftarRiwayat = Array.isArray(riwayat) ? riwayat : (riwayat && riwayat.items) || [];
     const hitung = { Hadir: 0, Terlambat: 0, Izin: 0, Sakit: 0 };
-    (riwayat || []).forEach(r => { if (hitung.hasOwnProperty(r.status)) hitung[r.status]++; });
+    daftarRiwayat.forEach(r => { if (hitung.hasOwnProperty(r.status)) hitung[r.status]++; });
     const totalAbsen = hitung.Hadir + hitung.Terlambat;
     setText('sumTotal', totalAbsen);
     setText('sumHadir', hitung.Hadir);
