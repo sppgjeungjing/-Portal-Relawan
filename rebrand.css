@@ -146,3 +146,69 @@
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ================================================================
+   TAMBAHAN v2.1 — perbaikan dari uji coba di laptop
+   ================================================================ */
+
+/* Kembalikan sebutan "Portal Relawan" di bawah nama, dalam satu lockup
+   (sebelumnya sempat hilang total karena label lama disembunyikan). */
+.shell-topbar-brand--portal .shell-topbar-brand-label {
+  display: block !important;
+  font-size: 9.5px; font-weight: 600; letter-spacing: .1em;
+  color: rgba(255,255,255,.62); text-transform: uppercase; margin-top: 2px;
+}
+.shell-topbar-brand--portal .shell-topbar-brand-text {
+  display: flex; flex-direction: column-reverse; line-height: 1.15;
+}
+
+/* Pengaman ukuran logo: kalau CSS lain gagal termuat, logo tidak lagi
+   tampil sebesar layar seperti yang sempat terjadi di laptop. */
+.sppg-hero-logos img,
+.header-logo, .shell-topbar-logo-bgn, .shell-topbar-logo-sppg {
+  max-height: 64px; max-width: 90px; object-fit: contain;
+}
+
+/* ---- Halaman dalam yang sebelumnya terasa kosong ---- */
+
+/* Kartu daftar umum (Jadwal, Informasi, Dokumen, Notifikasi) */
+.info-card, .jadwal-card, .dokumen-card, .notif-card, .card-item {
+  background: #fff; border: 1px solid var(--sppg-line);
+  border-left: 4px solid var(--sppg-gold);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+  box-shadow: 0 1px 2px rgba(12,28,54,.05);
+}
+
+/* Kartu angka ringkasan — beri warna sesuai makna, bukan abu-abu semua */
+.stat-card, .stok-summary-card {
+  background: #fff; border: 1px solid var(--sppg-line);
+  border-radius: 12px; padding: 16px 14px; text-align: left;
+}
+.stat-card span, .stok-summary-card span {
+  display: block; font-size: 26px; font-weight: 800; color: var(--sppg-navy); line-height: 1.1;
+}
+.stat-card p, .stok-summary-card p {
+  margin: 4px 0 0; font-size: 12.5px; color: #6b7280;
+}
+.stok-summary-card.stok-card-aman span { color: #1a7a4c; }
+.stok-summary-card.stok-card-menipis span { color: var(--sppg-gold); }
+.stok-summary-card.stok-card-habis span { color: #b23a3a; }
+
+/* Baris identitas (Profil, Detail) — beri garis pemisah supaya terbaca */
+.profile-identity-row {
+  display: flex; justify-content: space-between; gap: 14px;
+  padding: 11px 0; border-bottom: 1px solid var(--sppg-line);
+  font-size: 13.5px;
+}
+.profile-identity-row:last-child { border-bottom: none; }
+.profile-identity-row > span:first-child { color: #6b7280; }
+.profile-identity-row > span:last-child { color: var(--sppg-navy); font-weight: 600; text-align: right; }
+
+/* Tabel admin: kepala tabel diberi bobot, baris ganjil diberi warna tipis */
+.table-wrap table thead th {
+  background: #f2f4f7; color: var(--sppg-navy); font-weight: 700;
+  font-size: 12.5px; text-align: left; padding: 11px 12px;
+  border-bottom: 2px solid var(--sppg-line);
+}
+.table-wrap table tbody td { padding: 11px 12px; font-size: 13px; border-bottom: 1px solid #eef0f3; }
+.table-wrap table tbody tr:nth-child(even) { background: #fafbfc; }

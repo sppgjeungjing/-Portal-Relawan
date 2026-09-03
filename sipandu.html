@@ -9,11 +9,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="portal.css">
-<link rel="stylesheet" href="app-shell.css">
-<link rel="stylesheet" href="rebrand.css">
-<link rel="stylesheet" href="sipandu.css">
+<link rel="stylesheet" href="style.css?v=20260903">
+<link rel="stylesheet" href="portal.css?v=20260903">
+<link rel="stylesheet" href="app-shell.css?v=20260903">
+<link rel="stylesheet" href="rebrand.css?v=20260903">
+<link rel="stylesheet" href="sipandu.css?v=20260903">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#12294d">
 </head>
@@ -88,7 +88,6 @@
     <div class="chip-tabs" id="sipanduTabs">
       <button type="button" class="chip-tab active" data-sub="dashboard">Dashboard</button>
       <button type="button" class="chip-tab" data-sub="wo">Work Order</button>
-      <button type="button" class="chip-tab is-hidden" data-sub="hakakses" id="tabHakAkses">Hak Akses</button>
     </div>
 
     <!-- DASHBOARD -->
@@ -120,12 +119,6 @@
         <button type="button" class="btn-submit" id="btnBukaTambahWo">+ Buat Work Order</button>
       </div>
       <div id="woListWrap"><div class="empty-state">Memuat data...</div></div>
-    </div>
-
-    <!-- HAK AKSES (khusus role ADMIN) -->
-    <div class="sipandu-sub" id="sipanduSubHakakses" style="display:none;">
-      <p style="font-size:12.5px;color:var(--color-text-muted);margin:-4px 0 12px;">Assign role SIPANDU ke relawan yang sudah aktif di Portal. Relawan yang belum pernah di-assign tetap bisa lihat menu SIPANDU tapi ditolak begitu buka isinya.</p>
-      <div id="hakAksesListWrap"><div class="empty-state">Memuat data...</div></div>
     </div>
   </div>
 
@@ -198,12 +191,12 @@
   </div>
 </div>
 
-<script src="config.js"></script>
-<script src="common.js"></script>
-<script src="sipandu-common.js"></script>
-<script src="auth-relawan.js"></script>
-<script src="app-shell.js"></script>
-<script src="sipandu.js"></script>
+<script src="config.js?v=20260903"></script>
+<script src="common.js?v=20260903"></script>
+<script src="sipandu-common.js?v=20260903"></script>
+<script src="auth-relawan.js?v=20260903"></script>
+<script src="app-shell.js?v=20260903"></script>
+<script src="sipandu.js?v=20260903"></script>
 <script>document.addEventListener("DOMContentLoaded", bootRelawanShell);</script>
 </body>
 </html>
