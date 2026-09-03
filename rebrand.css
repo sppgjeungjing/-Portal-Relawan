@@ -212,3 +212,58 @@
 }
 .table-wrap table tbody td { padding: 11px 12px; font-size: 13px; border-bottom: 1px solid #eef0f3; }
 .table-wrap table tbody tr:nth-child(even) { background: #fafbfc; }
+
+/* ================================================================
+   v2.2 — header "PORTAL / SPPG JEUNGJING", grup menu, isi halaman
+   ================================================================ */
+
+/* Urutan header: "PORTAL" DI ATAS, nama di bawah (bukan sebaliknya) */
+.shell-topbar-brand--portal .shell-topbar-brand-text { flex-direction: column !important; }
+.shell-topbar-brand--portal .shell-topbar-brand-label {
+  display: block !important; margin: 0 0 1px !important;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .16em;
+  color: rgba(255,255,255,.6); text-transform: uppercase;
+}
+
+/* Judul kelompok kartu menu di Dashboard relawan */
+.dash-group-title {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 12.5px; font-weight: 800; color: var(--sppg-navy);
+  margin: 22px 0 10px; letter-spacing: .01em;
+}
+.dash-group-title::before {
+  content: ""; width: 16px; height: 2.5px; background: var(--sppg-gold); border-radius: 2px;
+}
+
+/* ---- Halaman dalam: hilangkan kesan "putih polos" ---- */
+.shell-content { background: var(--sppg-paper); }
+
+/* Kepala halaman diberi kartu sendiri supaya ada titik awal yang jelas */
+.shell-page-head {
+  background: #fff; border: 1px solid var(--sppg-line);
+  border-left: 4px solid var(--sppg-gold);
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+.shell-page-head-icon {
+  width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0;
+  background: #eef2f8; color: var(--sppg-navy);
+  display: flex; align-items: center; justify-content: center;
+}
+.shell-page-head h1 { font-size: 18px; font-weight: 800; color: var(--sppg-navy); margin: 0; }
+.shell-page-head p { font-size: 13px; color: #6b7280; margin: 3px 0 0; line-height: 1.5; }
+
+/* Kartu isi & keadaan kosong pada halaman Informasi/Jadwal/Dokumen/Notifikasi */
+.info-card, .jadwal-card, .dokumen-card, .notif-card, .notifikasi-item, .dokumen-item {
+  background: #fff; border: 1px solid var(--sppg-line);
+  border-left: 4px solid var(--sppg-gold);
+  border-radius: 11px; padding: 15px 17px; margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(12,28,54,.06);
+}
+.info-card-body, .jadwal-card-ket { margin: 0; font-size: 13.5px; color: #55606f; line-height: 1.6; }
+
+/* Kartu tunggal berisi "Belum ada ..." -- jadikan ajakan, bukan sekadar teks */
+.info-card:only-child, .jadwal-card:only-child {
+  border-left-color: var(--sppg-line); border-style: dashed;
+  text-align: center; padding: 30px 18px; color: #6b7280;
+}
