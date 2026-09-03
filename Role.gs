@@ -111,3 +111,47 @@ function getRingkasanMonitoring(token) {
     stok: stok
   };
 }
+
+// ------------------------------------------------------------
+// KELOLA ROLE (Hak Akses) -- dipulihkan, sempat hilang saat rilis
+// sebelumnya tidak lengkap terpasang (dipanggil dari Code.gs tapi
+// fungsinya belum ada).
+// ------------------------------------------------------------
+
+function getDaftarRelawanUntukRoleAdmin(token) {
+  requireAuth(token);
+  const namaMap = {};
+  sheetToObjects(getSheet(NAMA_SHEET.RELAWAN))
+    .filter(r => String(r.STATUS).toUpperCase() === 'AKTIF')
+    .forEach(r => { namaMap[r.ID_RELAWAN] = r.NAMA_RELAWAN; });
+
+  return sheetToObjects(getAkunSheet())
+    .filter(a => namaMap[a.ID_RELAWAN])
+    .map(a => ({ idRelawan: a.ID_RELAWAN, nama: namaMap[a.ID_RELAWAN], role: getRoleRelawan_(a.ID_RELAWAN) }));
+}
+
+function setRoleRelawan(body) {
+  const usernameAdmin = requireAuth(body.token);
+  const idRelawan = sanitize(body.idRelawan);
+  const role = sanitize(body.role);
+  if (!idRelawan) throw new Error('Relawan wajib dipilih.');
+  if (role && role !== 'ASN' && role !== 'KEPALA_SPPG') throw new Error('Role tidak dikenali.');
+
+  const sheet = getAkunSheet();
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0].map(h => String(h).trim());
+  const idxId = headers.indexOf('ID_RELAWAN');
+  const idxRole = headers.indexOf('ROLE');
+  if (idxRole === -1) {
+    throw new Error('Kolom ROLE belum ditambahkan di sheet 07_AKUN_RELAWAN. Tambahkan dulu kolom ini secara manual sebelum mengatur Hak Akses.');
+  }
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idxId]) === idRelawan) {
+      sheet.getRange(i + 1, idxRole + 1).setValue(role);
+      logAudit_('SET_ROLE_RELAWAN', 'ROLE', idRelawan, usernameAdmin, { role: role || 'RELAWAN' });
+      return { success: true };
+    }
+  }
+  throw new Error('Akun relawan tidak ditemukan.');
+}

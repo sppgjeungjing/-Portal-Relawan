@@ -34,8 +34,40 @@ const NAMA_SHEET = {
   STOK_TRANSAKSI_DETAIL: '20_STOK_TRANSAKSI_DETAIL',
   SHIFT_DIVISI: '21_SHIFT_DIVISI',
   PENUGASAN_KHUSUS: '22_PENUGASAN_KHUSUS',
-  STOK_SATUAN: '23_STOK_SATUAN'
+  STOK_SATUAN: '23_STOK_SATUAN',
+  AUDIT_LOG: '24_AUDIT_LOG'
 };
+
+/**
+ * Fase 9 -- Audit Log (dipulihkan, sempat tidak ikut ter-deploy padahal
+ * sudah dipanggil dari beberapa fungsi lain). Dibungkus try/catch SENGAJA:
+ * gagal mencatat audit TIDAK BOLEH menggagalkan aksi utama pengguna. Kalau
+ * sheet 24_AUDIT_LOG belum dibuat, diam-diam tidak melakukan apa pun.
+ */
+function logAudit_(aksi, modul, idTerkait, aktor, detail) {
+  try {
+    const sheet = getSheet(NAMA_SHEET.AUDIT_LOG);
+    const data = sheet.getDataRange().getValues();
+    let max = 0;
+    for (let i = 1; i < data.length; i++) {
+      const cocok = String(data[i][0] || '').match(/^AUD(\d+)$/i);
+      if (cocok) max = Math.max(max, parseInt(cocok[1], 10));
+    }
+    const id = 'AUD' + String(max + 1).padStart(6, '0');
+    sheet.appendRow([id, aksi, modul, idTerkait || '', aktor || '', new Date(), JSON.stringify(detail || {})]);
+  } catch (e) {
+    // Sheet belum disiapkan / error lain -- diamkan, jangan ganggu aksi utama.
+  }
+}
+
+/** Daftar audit log terbaru untuk Admin -- dibatasi 200 baris terbaru. */
+function getAuditLogListAdmin(token) {
+  requireAuth(token);
+  const rows = sheetToObjects(getSheet(NAMA_SHEET.AUDIT_LOG));
+  return rows.slice(-200).reverse().map(r => ({
+    waktu: r.WAKTU, aksi: r.AKSI, modul: r.MODUL, idTerkait: r.ID_TERKAIT, aktor: r.AKTOR, detail: r.DETAIL
+  }));
+}
 
 // Jam masuk standar (format 24 jam, "HH:MM"). Relawan yang absen MASUK
 // setelah jam ini akan otomatis berstatus "TERLAMBAT".

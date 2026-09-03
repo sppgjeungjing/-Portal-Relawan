@@ -350,7 +350,83 @@ function updateProfilRelawan(body) {
   const sheet = getAkunSheet();
   if (body.noHp !== undefined) sheet.getRange(akun.baris, akun.idx.NO_HP + 1).setValue(sanitize(body.noHp));
   if (body.email !== undefined) sheet.getRange(akun.baris, akun.idx.EMAIL + 1).setValue(sanitize(body.email));
+
+  // Kolom tambahan -- hanya ditulis kalau kolomnya memang sudah dibuat,
+  // supaya versi lama sheet tetap berjalan tanpa error. (Sebelumnya field
+  // ini dikirim oleh profil.js tapi DIAM-DIAM diabaikan di sini -- bukan
+  // error, makanya tidak ketahuan sampai dicek langsung.)
+  if (body.tanggalLahir !== undefined && akun.idx.TANGGAL_LAHIR !== undefined) {
+    sheet.getRange(akun.baris, akun.idx.TANGGAL_LAHIR + 1).setNumberFormat('@').setValue(sanitize(body.tanggalLahir));
+  }
+  if (body.jenisKelamin !== undefined && akun.idx.JENIS_KELAMIN !== undefined) {
+    sheet.getRange(akun.baris, akun.idx.JENIS_KELAMIN + 1).setValue(sanitize(body.jenisKelamin));
+  }
+  if (body.alamat !== undefined && akun.idx.ALAMAT !== undefined) {
+    sheet.getRange(akun.baris, akun.idx.ALAMAT + 1).setValue(sanitize(body.alamat));
+  }
   return { success: true };
+}
+
+const JEDA_GANTI_USERNAME_HARI = 14;
+
+function statusGantiUsername_(akun) {
+  if (akun.idx.USERNAME_DIUBAH_PADA === undefined) return { boleh: true, sisaHari: 0 };
+  const terakhir = akun.data[akun.idx.USERNAME_DIUBAH_PADA];
+  if (!(terakhir instanceof Date)) return { boleh: true, sisaHari: 0 };
+  const selisihHari = Math.floor((Date.now() - terakhir.getTime()) / 86400000);
+  const sisa = JEDA_GANTI_USERNAME_HARI - selisihHari;
+  return sisa > 0 ? { boleh: false, sisaHari: sisa } : { boleh: true, sisaHari: 0 };
+}
+
+/** Ganti username relawan -- menyentuh JALUR LOGIN, validasi ketat. */
+function gantiUsernameRelawan(body) {
+  const idRelawan = requireAuthRelawan(body.token);
+  const akun = cariAkunByIdRelawan_(idRelawan);
+  if (!akun) throw new Error('Akun tidak ditemukan.');
+  if (akun.idx.USERNAME_DIUBAH_PADA === undefined) {
+    throw new Error('Kolom USERNAME_DIUBAH_PADA belum ada di 07_AKUN_RELAWAN. Hubungi Admin untuk menambahkannya.');
+  }
+  const status = statusGantiUsername_(akun);
+  if (!status.boleh) throw new Error('Username baru bisa diubah lagi dalam ' + status.sisaHari + ' hari.');
+
+  const baru = sanitize(body.usernameBaru).toLowerCase();
+  if (baru.length < 4) throw new Error('Username minimal 4 karakter.');
+  if (!/^[a-z0-9._]+$/.test(baru)) throw new Error('Username hanya boleh huruf kecil, angka, titik, dan garis bawah.');
+  if (baru === String(akun.data[akun.idx.USERNAME]).toLowerCase()) throw new Error('Username baru sama dengan yang sekarang.');
+
+  const semuaAkun = sheetToObjects(getAkunSheet());
+  const bentrok = semuaAkun.some(a => String(a.USERNAME).toLowerCase() === baru && String(a.ID_RELAWAN) !== idRelawan);
+  if (bentrok) throw new Error('Username "' + baru + '" sudah dipakai. Silakan pilih yang lain.');
+
+  const sheet = getAkunSheet();
+  sheet.getRange(akun.baris, akun.idx.USERNAME + 1).setValue(baru);
+  sheet.getRange(akun.baris, akun.idx.USERNAME_DIUBAH_PADA + 1).setValue(new Date());
+  logAudit_('GANTI_USERNAME', 'AKUN_RELAWAN', idRelawan, idRelawan, { usernameBaru: baru });
+  return { success: true, username: baru };
+}
+
+/** Simpan foto profil ke Drive (folder terpisah dari swafoto absensi). */
+function simpanFotoProfilRelawan(body) {
+  const idRelawan = requireAuthRelawan(body.token);
+  const akun = cariAkunByIdRelawan_(idRelawan);
+  if (!akun) throw new Error('Akun tidak ditemukan.');
+  if (akun.idx.FOTO_PROFIL === undefined) {
+    throw new Error('Kolom FOTO_PROFIL belum ada di 07_AKUN_RELAWAN. Hubungi Admin untuk menambahkannya.');
+  }
+  if (!body.fotoBase64) throw new Error('Foto belum dipilih.');
+  const cocok = String(body.fotoBase64).match(/^data:image\/(\w+);base64,(.+)$/);
+  if (!cocok) throw new Error('Format foto tidak dikenali.');
+
+  const blob = Utilities.newBlob(Utilities.base64Decode(cocok[2]), 'image/' + cocok[1], 'profil-' + idRelawan + '.jpg');
+  const root = DriveApp.getRootFolder();
+  const folder = getOrCreateFolder_(root, 'FOTO_PROFIL_SPPG_JEUNGJING');
+  const lama = akun.data[akun.idx.FOTO_PROFIL];
+  if (lama) { try { DriveApp.getFileById(lama).setTrashed(true); } catch (e) { /* file sudah hilang -- abaikan */ } }
+
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  getAkunSheet().getRange(akun.baris, akun.idx.FOTO_PROFIL + 1).setValue(file.getId());
+  return { success: true, fotoProfilUrl: urlFotoReference_(file.getId()) };
 }
 
 function gantiPasswordRelawan(body) {

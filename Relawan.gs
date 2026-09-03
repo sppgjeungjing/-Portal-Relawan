@@ -3,6 +3,21 @@
  * Relawan.gs — Data relawan & divisi
  */
 
+/**
+ * TAMBALAN DARURAT (dipulihkan lagi -- lihat catatan pengiriman):
+ * dipanggil di 9 tempat (login, absensi, profil, shift, stok).
+ */
+function getRelawanById(id) {
+  const relawan = sheetToObjects(getSheet(NAMA_SHEET.RELAWAN)).find(r => String(r.ID_RELAWAN) === String(id));
+  if (!relawan) return null;
+  return {
+    id: relawan.ID_RELAWAN,
+    nama: relawan.NAMA_RELAWAN,
+    divisi: relawan.DIVISI,
+    status: relawan.STATUS
+  };
+}
+
 function getDivisiList() {
   const sheet = getSheet(NAMA_SHEET.DIVISI);
   const data = sheet.getDataRange().getValues();

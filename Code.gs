@@ -117,6 +117,9 @@ function doGet(e) {
       case 'masukSebagaiRelawanUntukSipandu':
         data = masukSebagaiRelawanUntukSipandu(e.parameter.token);
         break;
+      case 'getAuditLogListAdmin':
+        data = getAuditLogListAdmin(e.parameter.token);
+        break;
       case 'getRingkasanMonitoring':
         data = getRingkasanMonitoring(e.parameter.token);
         break;
