@@ -249,8 +249,20 @@ function ambilSwafoto() {
   if (!streamKamera) return;
   const video = el.videoLive;
   const canvas = el.canvasCapture;
-  const lebar = video.videoWidth || 720;
-  const tinggi = video.videoHeight || 960;
+
+  // PERBAIKAN: sebelumnya canvas memakai resolusi PENUH kamera HP (bisa
+  // 1280x960 ke atas). Setelah dijadikan base64, payload-nya bisa 300-700KB
+  // -- itu penyebab utama absensi sering timeout di jaringan 4G, karena
+  // Apps Script harus menerima, mendekode, lalu mengunggahnya ke Drive.
+  // Sekarang sisi terpanjang dibatasi 720px: ukuran turun drastis, wajah
+  // tetap jelas untuk verifikasi.
+  const MAKS_SISI = 720;
+  const lebarAsli = video.videoWidth || 720;
+  const tinggiAsli = video.videoHeight || 960;
+  const skala = Math.min(1, MAKS_SISI / Math.max(lebarAsli, tinggiAsli));
+  const lebar = Math.round(lebarAsli * skala);
+  const tinggi = Math.round(tinggiAsli * skala);
+
   canvas.width = lebar;
   canvas.height = tinggi;
   canvas.getContext('2d').drawImage(video, 0, 0, lebar, tinggi);
@@ -373,6 +385,39 @@ async function kirimAbsensi() {
     hideLoading();
     tampilkanOverlaySukses(hasil);
   } catch (err) {
+    // PENTING: kalau gagal karena JARINGAN/TIMEOUT (bukan ditolak server),
+    // data BISA JADI sebenarnya sudah tersimpan -- server tetap memproses
+    // walau browser berhenti menunggu. Dulu di sini langsung menampilkan
+    // "Server tidak merespons", padahal absennya sudah masuk; relawan lalu
+    // mencoba lagi dan dapat pesan "Anda sudah absen" yang membingungkan.
+    // Sekarang: cek dulu ke server, baru laporkan kondisi yang sebenarnya.
+    const mungkinTersimpan = /tidak merespons|belum dapat dikirim|koneksi/i.test(err.message || '');
+    if (mungkinTersimpan) {
+      showLoading('Memeriksa apakah absensi sudah tersimpan...');
+      try {
+        const cek = await apiGet('getStatusAbsensiRelawan', { token: sesiAbsensi.token });
+        hideLoading();
+        const detail = jenisAktif === 'MASUK' ? cek.masuk : cek.pulang;
+        if (detail && detail.sudah) {
+          statusTerkini = cek;
+          tampilkanOverlaySukses({
+            jenis: jenisAktif,
+            jam: detail.jam || '',
+            statusLokasi: detail.statusLokasi || ''
+          });
+          return;
+        }
+        showError('Absensi belum tersimpan. Koneksi terputus saat mengirim — silakan coba kirim lagi.');
+        perbaruiTombolKirim();
+        return;
+      } catch (errCek) {
+        hideLoading();
+        showError('Koneksi terputus dan status absensi belum bisa dipastikan. Muat ulang halaman untuk memeriksa sebelum mengirim ulang.');
+        perbaruiTombolKirim();
+        return;
+      }
+    }
+
     hideLoading();
     showError(err.message || 'Absensi gagal dikirim.');
     perbaruiTombolKirim();
