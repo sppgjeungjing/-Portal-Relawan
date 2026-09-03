@@ -39,8 +39,15 @@ async function sipanduApiGet(action, params, _attempt) {
 
   let json;
   try {
-    json = await res.json();
+    const teksMentah = await res.text();
+    try {
+      json = JSON.parse(teksMentah);
+    } catch (e2) {
+      const cuplikan = teksMentah.replace(/\s+/g, ' ').trim().slice(0, 160);
+      throw new Error('Server SIPANDU memberikan respons yang tidak bisa dibaca. Cuplikan: "' + (cuplikan || '(kosong)') + '"');
+    }
   } catch (err) {
+    if (err.message && err.message.indexOf('Cuplikan') !== -1) throw err;
     throw new Error('Server SIPANDU memberikan respons yang tidak terduga. Coba beberapa saat lagi.');
   }
   logDebug_('SIPANDU-OK', action, (Date.now() - mulai) + 'ms');
@@ -68,8 +75,15 @@ async function sipanduApiPost(action, payload, timeoutMs) {
   }
   let json;
   try {
-    json = await res.json();
+    const teksMentah = await res.text();
+    try {
+      json = JSON.parse(teksMentah);
+    } catch (e2) {
+      const cuplikan = teksMentah.replace(/\s+/g, ' ').trim().slice(0, 160);
+      throw new Error('Server SIPANDU memberikan respons yang tidak bisa dibaca. Cuplikan: "' + (cuplikan || '(kosong)') + '"');
+    }
   } catch (err) {
+    if (err.message && err.message.indexOf('Cuplikan') !== -1) throw err;
     throw new Error('Server SIPANDU memberikan respons yang tidak terduga. Coba beberapa saat lagi.');
   }
   logDebug_('SIPANDU-OK', action, (Date.now() - mulai) + 'ms');

@@ -125,11 +125,21 @@ async function apiGet(action, params, _attempt) {
     if (err.name === 'AbortError') throw new Error('Server tidak merespons. Silakan muat ulang halaman.');
     throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet dan coba kembali.');
   }
+  // Ambil teks mentah dulu (bukan langsung res.json()) supaya kalau gagal
+  // di-parse, kita bisa tunjukkan CUPLIKAN ISI ASLINYA -- ini yang bikin
+  // "Server memberikan respons yang tidak terduga" dulu tidak kasih tahu
+  // apa-apa selain itu sendiri, sekarang kelihatan penyebabnya langsung.
+  const teksMentah = await res.text();
   let json;
   try {
-    json = await res.json();
+    json = JSON.parse(teksMentah);
   } catch (err) {
-    throw new Error('Server memberikan respons yang tidak terduga. Coba beberapa saat lagi.');
+    const cuplikan = teksMentah.replace(/\s+/g, ' ').trim().slice(0, 160);
+    logDebug_('RAW_RESPONSE', action, cuplikan);
+    if (/authorization|permission|accounts\.google\.com|sign in/i.test(cuplikan)) {
+      throw new Error('Server perlu otorisasi ulang oleh Admin (buka Apps Script sekali, klik Run pada salah satu fungsi, izinkan aksesnya). Detail: ' + cuplikan);
+    }
+    throw new Error('Server memberikan respons yang tidak bisa dibaca. Cuplikan: "' + (cuplikan || '(kosong)') + '"');
   }
   logDebug_('OK', action, (Date.now() - mulai) + 'ms');
   if (!json.success) throw new Error(json.message || 'Terjadi kesalahan pada server.');
@@ -168,11 +178,17 @@ async function apiPost(action, payload, timeoutMs) {
     if (err.name === 'AbortError') throw new Error('Server tidak merespons. Data mungkin belum tersimpan — periksa kembali sebelum mengulang.');
     throw new Error('Data belum dapat dikirim. Silakan periksa koneksi internet dan coba kembali.');
   }
+  const teksMentah = await res.text();
   let json;
   try {
-    json = await res.json();
+    json = JSON.parse(teksMentah);
   } catch (err) {
-    throw new Error('Server memberikan respons yang tidak terduga. Coba beberapa saat lagi.');
+    const cuplikan = teksMentah.replace(/\s+/g, ' ').trim().slice(0, 160);
+    logDebug_('RAW_RESPONSE', action, cuplikan);
+    if (/authorization|permission|accounts\.google\.com|sign in/i.test(cuplikan)) {
+      throw new Error('Server perlu otorisasi ulang oleh Admin (buka Apps Script sekali, klik Run pada salah satu fungsi, izinkan aksesnya). Detail: ' + cuplikan);
+    }
+    throw new Error('Server memberikan respons yang tidak bisa dibaca. Cuplikan: "' + (cuplikan || '(kosong)') + '"');
   }
   logDebug_('OK', action, (Date.now() - mulai) + 'ms');
   if (!json.success) throw new Error(json.message || 'Terjadi kesalahan pada server.');
