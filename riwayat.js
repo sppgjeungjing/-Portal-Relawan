@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         : 'Tidak ada catatan absensi';
 
       return `
-      <div class="riwayat-item">
+      <div class="riwayat-item is-${badgeClassUntukStatus(r.status)}">
         <div class="riwayat-item-date">
           <span class="riwayat-day-name">${namaHari}</span>
           <span class="riwayat-day-num">${tglSingkat}</span>
