@@ -9,11 +9,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20260903b">
-<link rel="stylesheet" href="portal.css?v=20260903b">
-<link rel="stylesheet" href="app-shell.css?v=20260903b">
-<link rel="stylesheet" href="rebrand.css?v=20260903b">
-<link rel="stylesheet" href="sipandu.css?v=20260903b">
+<link rel="stylesheet" href="style.css?v=20260903c">
+<link rel="stylesheet" href="portal.css?v=20260903c">
+<link rel="stylesheet" href="app-shell.css?v=20260903c">
+<link rel="stylesheet" href="rebrand.css?v=20260903c">
+<link rel="stylesheet" href="sipandu.css?v=20260903c">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#12294d">
 </head>
@@ -88,6 +88,7 @@
     <div class="chip-tabs" id="sipanduTabs">
       <button type="button" class="chip-tab active" data-sub="dashboard">Dashboard</button>
       <button type="button" class="chip-tab" data-sub="wo">Work Order</button>
+      <button type="button" class="chip-tab" data-sub="operasional">Operasional</button>
     </div>
 
     <!-- DASHBOARD -->
@@ -119,6 +120,116 @@
         <button type="button" class="btn-submit" id="btnBukaTambahWo">+ Buat Work Order</button>
       </div>
       <div id="woListWrap"><div class="empty-state">Memuat data...</div></div>
+    </div>
+
+    <!-- OPERASIONAL: Persiapan, Pengolahan, Pemorsian, Distribusi, Cuci Ompreng -->
+    <div class="sipandu-sub" id="sipanduSubOperasional" style="display:none;">
+      <div class="inline-form-relawan">
+        <select id="opsFilterWo"><option value="">Pilih Work Order...</option></select>
+      </div>
+
+      <div id="opsBelumPilihWo" class="empty-state">Pilih Work Order dulu untuk lihat/isi data operasionalnya.</div>
+
+      <div id="opsKontenWo" style="display:none;">
+        <div class="chip-tabs" id="opsTabs">
+          <button type="button" class="chip-tab active" data-ops="persiapan">Persiapan</button>
+          <button type="button" class="chip-tab" data-ops="pengolahan">Pengolahan</button>
+          <button type="button" class="chip-tab" data-ops="pemorsian">Pemorsian</button>
+          <button type="button" class="chip-tab" data-ops="distribusi">Distribusi</button>
+          <button type="button" class="chip-tab" data-ops="cuci">Cuci Ompreng</button>
+        </div>
+
+        <!-- PERSIAPAN -->
+        <div class="ops-panel" id="opsPanelPersiapan">
+          <form id="formTambahPersiapan" class="inline-form-relawan">
+            <input type="text" id="prpBahan" placeholder="Nama bahan" required>
+            <input type="number" id="prpJumlah" placeholder="Jumlah" min="0" step="0.01">
+            <input type="text" id="prpSatuan" placeholder="Satuan (kg, pcs, dst)">
+            <button type="submit" class="btn-outline">+ Tambah Bahan</button>
+          </form>
+          <div id="listPersiapan"><div class="empty-state">Memuat...</div></div>
+        </div>
+
+        <!-- PENGOLAHAN -->
+        <div class="ops-panel" id="opsPanelPengolahan" style="display:none;">
+          <form id="formTambahPengolahan" class="inline-form-relawan">
+            <input type="text" id="pngKegiatan" placeholder="Nama kegiatan" required>
+            <input type="text" id="pngBahan" placeholder="Bahan (opsional)">
+            <input type="number" id="pngJumlah" placeholder="Jumlah" min="0" step="0.01">
+            <input type="text" id="pngSatuan" placeholder="Satuan">
+            <button type="submit" class="btn-outline">+ Tambah Kegiatan</button>
+          </form>
+          <div id="listPengolahan"><div class="empty-state">Memuat...</div></div>
+        </div>
+
+        <!-- PEMORSIAN -->
+        <div class="ops-panel" id="opsPanelPemorsian" style="display:none;">
+          <form id="formTambahSesi" class="inline-form-relawan">
+            <input type="text" id="pmrSesi" placeholder="Nama sesi (mis. Sesi 1)" required>
+            <input type="number" id="pmrTarget" placeholder="Target porsi" min="0">
+            <button type="submit" class="btn-outline">+ Buka Sesi Pemorsian</button>
+          </form>
+          <div id="listPemorsian"><div class="empty-state">Memuat...</div></div>
+        </div>
+
+        <!-- DISTRIBUSI -->
+        <div class="ops-panel" id="opsPanelDistribusi" style="display:none;">
+          <form id="formTambahArmada" class="inline-form-relawan">
+            <input type="text" id="dstKurir" placeholder="Nama kurir" required>
+            <input type="text" id="dstKendaraan" placeholder="Plat Kendaraan (mis. B 1234 ABC)">
+            <button type="submit" class="btn-outline">+ Tambah Armada</button>
+          </form>
+          <div id="listDistribusi"><div class="empty-state">Memuat...</div></div>
+        </div>
+
+        <!-- CUCI OMPRENG -->
+        <div class="ops-panel" id="opsPanelCuci" style="display:none;">
+          <form id="formTambahCuci" class="inline-form-relawan">
+            <input type="number" id="cuciJumlah" placeholder="Jumlah ompreng diterima" min="0" required>
+            <button type="submit" class="btn-outline">+ Catat Penerimaan</button>
+          </form>
+          <div id="listCuci"><div class="empty-state">Memuat...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Aksi Tahap Distribusi/Cuci (dipakai bergantian utk semua fase) -->
+  <div class="modal-overlay is-hidden" id="modalAksiTahap">
+    <div class="modal-card" style="text-align:left;max-width:400px;">
+      <h2 id="aksiTahapJudul">Aksi</h2>
+      <form id="formAksiTahap" style="display:flex;flex-direction:column;gap:10px;">
+        <div id="aksiTahapFieldKhusus"></div>
+        <label class="sipandu-label" id="aksiTahapLabelWaktu">Waktu</label>
+        <input type="datetime-local" id="aksiTahapWaktu">
+        <label class="sipandu-label" id="aksiTahapLabelFoto">Foto (opsional)</label>
+        <input type="file" id="aksiTahapFoto" accept="image/*">
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button type="button" class="btn-outline" id="btnBatalAksiTahap" style="flex:1;">Batal</button>
+          <button type="submit" class="btn-submit" style="flex:1;">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="modal-overlay is-hidden" id="modalTambahTujuan">
+    <div class="modal-card" style="text-align:left;max-width:400px;">
+      <h2>Tambah Tujuan</h2>
+      <form id="formTambahTujuan" style="display:flex;flex-direction:column;gap:10px;">
+        <input type="text" id="tjnNama" placeholder="Nama tujuan (sekolah/lokasi)" required>
+        <div class="sipandu-grid5" style="grid-template-columns:1fr 1fr;">
+          <input type="number" id="tjnPorsiBesar" placeholder="Porsi Besar" min="0">
+          <input type="number" id="tjnPorsiKecil" placeholder="Porsi Kecil" min="0">
+        </div>
+        <label class="sipandu-label">Jam Kirim</label>
+        <input type="time" id="tjnJam">
+        <label class="sipandu-label">Batas Waktu Penugasan Kurir</label>
+        <input type="datetime-local" id="tjnBatasWaktu">
+        <textarea id="tjnCatatan" class="absensi-textarea" placeholder="Catatan (opsional)"></textarea>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn-outline" id="btnBatalTambahTujuan" style="flex:1;">Batal</button>
+          <button type="submit" class="btn-submit" style="flex:1;">Simpan</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -191,12 +302,12 @@
   </div>
 </div>
 
-<script src="config.js?v=20260903b"></script>
-<script src="common.js?v=20260903b"></script>
-<script src="sipandu-common.js?v=20260903b"></script>
-<script src="auth-relawan.js?v=20260903b"></script>
-<script src="app-shell.js?v=20260903b"></script>
-<script src="sipandu.js?v=20260903b"></script>
+<script src="config.js?v=20260903c"></script>
+<script src="common.js?v=20260903c"></script>
+<script src="sipandu-common.js?v=20260903c"></script>
+<script src="auth-relawan.js?v=20260903c"></script>
+<script src="app-shell.js?v=20260903c"></script>
+<script src="sipandu.js?v=20260903c"></script>
 <script>document.addEventListener("DOMContentLoaded", bootRelawanShell);</script>
 </body>
 </html>
