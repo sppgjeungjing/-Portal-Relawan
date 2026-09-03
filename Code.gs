@@ -114,8 +114,14 @@ function doGet(e) {
       case 'getProfilRoleSaya':
         data = getProfilRoleSaya(e.parameter.token);
         break;
+      case 'masukSebagaiRelawanUntukSipandu':
+        data = masukSebagaiRelawanUntukSipandu(e.parameter.token);
+        break;
       case 'getRingkasanMonitoring':
         data = getRingkasanMonitoring(e.parameter.token);
+        break;
+      case 'getDaftarRelawanUntukRoleAdmin':
+        data = getDaftarRelawanUntukRoleAdmin(e.parameter.token);
         break;
       case 'getSatuanListAdmin':
         data = getSatuanListAdmin(e.parameter.token);
@@ -239,6 +245,12 @@ function doPost(e) {
       case 'updateProfilRelawan':
         data = updateProfilRelawan(body);
         break;
+      case 'gantiUsernameRelawan':
+        data = gantiUsernameRelawan(body);
+        break;
+      case 'simpanFotoProfilRelawan':
+        data = simpanFotoProfilRelawan(body);
+        break;
       case 'gantiPasswordRelawan':
         data = gantiPasswordRelawan(body);
         break;
@@ -339,6 +351,9 @@ function doPost(e) {
         break;
       case 'setRoleStok':
         data = setRoleStok(body);
+        break;
+      case 'setRoleRelawan':
+        data = setRoleRelawan(body);
         break;
       case 'addShiftDivisi':
         data = addShiftDivisi(body);

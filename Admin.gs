@@ -31,6 +31,77 @@ function adminLogin(username, password) {
   throw new Error('Username atau password salah.');
 }
 
+/**
+ * JEMBATAN SIPANDU UNTUK ADMIN.
+ * SIPANDU cuma percaya sesi RELAWAN (lihat catatan di SipanduAuth.gs --
+ * CacheService sesi Admin tidak bisa dibaca proyek Apps Script lain).
+ * Daripada mengubah cara SIPANDU memvalidasi sesi (beresiko ke jalur yang
+ * sudah berjalan), Admin cukup "dipinjamkan" sesi relawan miliknya SENDIRI
+ * secara otomatis di sini -- pola login-nya PERSIS sama dengan relawanLogin,
+ * cuma dipicu dari sesi Admin yang sudah tervalidasi, tanpa perlu username/
+ * password relawan diketik ulang.
+ *
+ * Keamanan: HANYA bisa masuk sebagai relawan yang SUDAH DITAUTKAN ke akun
+ * Admin itu sendiri (kolom ID_RELAWAN_TERKAIT di 06_ADMIN, diisi manual
+ * oleh Admin) -- tidak ada parameter dari klien yang menentukan relawan
+ * mana, jadi tidak bisa dipakai untuk masuk sebagai relawan lain.
+ */
+function masukSebagaiRelawanUntukSipandu(token) {
+  const username = requireAuth(token);
+
+  const sheetAdmin = getSheet(NAMA_SHEET.ADMIN);
+  const data = sheetAdmin.getDataRange().getValues();
+  const headers = data[0].map(h => String(h).trim());
+  const idxUser = headers.indexOf('USERNAME');
+  const idxRelawanTerkait = headers.indexOf('ID_RELAWAN_TERKAIT');
+
+  if (idxRelawanTerkait === -1) {
+    throw new Error('Kolom ID_RELAWAN_TERKAIT belum ada di 06_ADMIN. Tambahkan dulu, lalu isi dengan ID relawan Anda sendiri (mis. R001).');
+  }
+
+  let idRelawanTerkait = '';
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idxUser]).toLowerCase() === username.toLowerCase()) {
+      idRelawanTerkait = String(data[i][idxRelawanTerkait] || '').trim();
+      break;
+    }
+  }
+  if (!idRelawanTerkait) {
+    throw new Error('Akun Admin ini belum ditautkan ke relawan mana pun. Isi kolom ID_RELAWAN_TERKAIT di 06_ADMIN dengan ID relawan Anda (mis. R001).');
+  }
+
+  const akun = cariAkunByIdRelawan_(idRelawanTerkait);
+  if (!akun) throw new Error('Relawan tertaut (' + idRelawanTerkait + ') tidak ditemukan di 07_AKUN_RELAWAN.');
+
+  const relawan = getRelawanById(idRelawanTerkait);
+  if (!relawan || String(relawan.status).toUpperCase() !== 'AKTIF') {
+    throw new Error('Data relawan tertaut (' + idRelawanTerkait + ') tidak aktif.');
+  }
+
+  // Dari sini persis pola relawanLogin() -- jalur cepat (CacheService) +
+  // jalur jangka panjang (sheet) supaya SIPANDU (yang membaca sheet
+  // lintas-proyek) langsung mengenali sesi ini.
+  const relawanToken = generateToken();
+  CacheService.getScriptCache().put('sesi_relawan_' + relawanToken, idRelawanTerkait, 21600);
+
+  if (akun.idx.TOKEN_AKTIF !== undefined && akun.idx.TOKEN_KADALUARSA !== undefined) {
+    const kadaluarsa = new Date(Date.now() + DURASI_SESI_RELAWAN_HARI * 24 * 60 * 60 * 1000);
+    const sheetAkun = getAkunSheet();
+    sheetAkun.getRange(akun.baris, akun.idx.TOKEN_AKTIF + 1).setValue(relawanToken);
+    sheetAkun.getRange(akun.baris, akun.idx.TOKEN_KADALUARSA + 1).setValue(kadaluarsa);
+  } else {
+    throw new Error('Portal belum punya kolom TOKEN_AKTIF/TOKEN_KADALUARSA di 07_AKUN_RELAWAN -- jembatan ke SIPANDU butuh itu untuk bisa dibaca lintas-proyek.');
+  }
+
+  return {
+    token: relawanToken,
+    idRelawan: idRelawanTerkait,
+    nama: relawan.nama,
+    divisi: relawan.divisi,
+    wajibGantiPassword: false
+  };
+}
+
 /** Dipanggil di awal setiap aksi admin (tulis data) untuk memastikan sesi masih berlaku. */
 function requireAuth(token) {
   if (!token) throw new Error('Sesi tidak valid. Silakan login kembali.');

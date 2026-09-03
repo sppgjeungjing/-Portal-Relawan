@@ -1623,3 +1623,31 @@
     });
   }
 })();
+
+// ============================================================
+// JEMBATAN SIPANDU — pinjam sesi relawan milik Admin sendiri secara
+// otomatis, supaya SIPANDU bisa dikerjakan tanpa login relawan terpisah.
+// Tidak mengubah mekanisme SIPANDU/Relawan yang sudah ada sama sekali.
+// ============================================================
+(function () {
+  const btn = document.getElementById('btnBukaSipandu');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    if (!window.sppgAdminToken) { showError('Sesi Admin tidak ditemukan. Silakan login ulang.'); return; }
+    try {
+      showLoading('Menyiapkan akses SIPANDU...');
+      const sesi = await apiGet('masukSebagaiRelawanUntukSipandu', { token: window.sppgAdminToken });
+      hideLoading();
+
+      // Simpan persis dengan pola sesi relawan biasa (kunci sama dengan
+      // yang dipakai auth-relawan.js), supaya sipandu.html langsung mengenali.
+      localStorage.setItem('sppgRelawanSession', JSON.stringify(sesi));
+
+      window.open('sipandu.html', '_blank');
+    } catch (err) {
+      hideLoading();
+      showError(err.message);
+    }
+  });
+})();
