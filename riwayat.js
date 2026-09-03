@@ -11,7 +11,7 @@ function parseTanggalDMY(tanggalStr) {
 }
 
 function badgeClassUntukStatus(status) {
-  const peta = { 'Hadir': 'hadir', 'Terlambat': 'terlambat', 'Izin': 'izin', 'Sakit': 'sakit', 'Tidak Hadir': 'tidak-hadir', 'Tidak Ada Jadwal': 'tidak-ada-jadwal' };
+  const peta = { 'Hadir': 'hadir', 'Terlambat': 'terlambat', 'Izin': 'izin', 'Sakit': 'sakit', 'Tidak Hadir': 'tidak-hadir', 'Tidak Ada Jadwal': 'tidak-ada-jadwal', 'Belum Berjalan': 'belum-berjalan' };
   return peta[status] || 'tidak-hadir';
 }
 
@@ -27,8 +27,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     showLoading('Memuat riwayat absensi...');
-    const riwayat = await apiGet('getRiwayatAbsensiRelawan', { token: sesi.token });
+    const hasil = await apiGet('getRiwayatAbsensiRelawan', { token: sesi.token });
     hideLoading();
+
+    // Subjudul mengikuti PERIODE AKTIF dari data Admin -- bukan teks tetap.
+    const sub = document.getElementById('riwayatSub');
+    if (sub) {
+      sub.textContent = hasil.periode
+        ? `Periode ${hasil.periode.nama} (${hasil.periode.tanggalMulai} – ${hasil.periode.tanggalSelesai})`
+        : 'Belum ada periode kerja yang dibuat Admin.';
+    }
+
+    const riwayat = hasil.items || [];
+    if (!riwayat.length) {
+      list.innerHTML = '<div class="empty-state">Belum ada tanggal operasional aktif pada periode ini.</div>';
+      main.style.display = 'block';
+      return;
+    }
 
     list.innerHTML = riwayat.map(r => {
       const d = parseTanggalDMY(r.tanggal);
@@ -36,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const tglSingkat = `${d.getDate()} ${NAMA_BULAN_SINGKAT[d.getMonth()]}`;
       const jamText = (r.jamMasuk || r.jamPulang)
         ? `Masuk ${r.jamMasuk ? r.jamMasuk.slice(0, 5) : '—'} · Pulang ${r.jamPulang ? r.jamPulang.slice(0, 5) : '—'}`
-        : 'Tidak ada catatan absensi';
+        : (r.akanDatang ? 'Jadwal operasional mendatang' : 'Tidak ada catatan absensi');
 
       return `
       <div class="riwayat-item is-${badgeClassUntukStatus(r.status)}">

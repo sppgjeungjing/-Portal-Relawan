@@ -9,10 +9,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20260903b">
-<link rel="stylesheet" href="portal.css?v=20260903b">
-<link rel="stylesheet" href="app-shell.css?v=20260903b">
-<link rel="stylesheet" href="rebrand.css?v=20260903b">
+<link rel="stylesheet" href="style.css?v=20260903c">
+<link rel="stylesheet" href="portal.css?v=20260903c">
+<link rel="stylesheet" href="app-shell.css?v=20260903c">
+<link rel="stylesheet" href="rebrand.css?v=20260903c">
 </head>
 <body>
 <div class="shell">
@@ -111,8 +111,49 @@
                 <label for="inputEmail" class="form-label">Email <span class="optional-tag">(opsional)</span></label>
                 <input type="email" id="inputEmail" class="form-input" placeholder="nama@email.com">
               </div>
+              <div class="form-group">
+                <label for="inputTanggalLahir">Tanggal Lahir</label>
+                <input type="date" id="inputTanggalLahir" class="form-input">
+              </div>
+              <div class="form-group">
+                <label for="inputJenisKelamin">Jenis Kelamin</label>
+                <select id="inputJenisKelamin" class="form-input">
+                  <option value="">Belum diisi</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="inputAlamat">Alamat</label>
+                <textarea id="inputAlamat" class="form-input" rows="2" placeholder="Alamat tempat tinggal"></textarea>
+              </div>
               <button type="submit" id="btnSimpanProfil" class="btn-submit">Simpan Perubahan</button>
             </form>
+
+            <p class="section-title">Foto Profil</p>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+              <div id="fotoProfilPratinjau" style="width:64px;height:64px;border-radius:50%;background:#eef2f8;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;color:var(--color-navy);font-weight:800;">—</div>
+              <div style="flex:1;">
+                <input type="file" id="inputFotoProfil" accept="image/*" style="font-size:12.5px;">
+                <p style="font-size:12px;color:var(--color-text-muted);margin:6px 0 0;">Foto diperkecil otomatis sebelum diunggah.</p>
+              </div>
+            </div>
+            <button type="button" id="btnSimpanFoto" class="btn-outline" style="width:100%;">Simpan Foto Profil</button>
+
+            <p class="section-title">Ubah Username</p>
+            <p id="infoGantiUsername" style="font-size:12.5px;color:var(--color-text-muted);margin:-6px 0 10px;">Memuat...</p>
+            <div id="formGantiUsernameWrap">
+              <div class="form-group">
+                <label for="inputUsernameBaru">Username Baru</label>
+                <input type="text" id="inputUsernameBaru" class="form-input" placeholder="huruf kecil, angka, titik, garis bawah" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="inputUsernameBaru2">Ketik Ulang Username Baru</label>
+                <input type="text" id="inputUsernameBaru2" class="form-input" placeholder="ulangi untuk memastikan" autocomplete="off">
+              </div>
+              <p style="font-size:12.5px;color:#b23a3a;line-height:1.6;margin:0 0 10px;">⚠️ Setelah diubah, Anda <strong>login memakai username baru ini</strong>. Username hanya bisa diubah 1× setiap 14 hari.</p>
+              <button type="button" id="btnGantiUsername" class="btn-outline" style="width:100%;">Ubah Username</button>
+            </div>
           </section>
 
           <p class="settings-section-title">Pengaturan Akun</p>
@@ -156,11 +197,11 @@
   </div>
 </div>
 
-<script src="config.js?v=20260903b"></script>
-<script src="common.js?v=20260903b"></script>
-<script src="auth-relawan.js?v=20260903b"></script>
-<script src="app-shell.js?v=20260903b"></script>
-<script src="profil.js?v=20260903b"></script>
+<script src="config.js?v=20260903c"></script>
+<script src="common.js?v=20260903c"></script>
+<script src="auth-relawan.js?v=20260903c"></script>
+<script src="app-shell.js?v=20260903c"></script>
+<script src="profil.js?v=20260903c"></script>
 <script>document.addEventListener("DOMContentLoaded", bootRelawanShell);</script>
 </body>
 </html>

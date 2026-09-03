@@ -30,6 +30,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('statusAkun').textContent = data.statusAkun === 'AKTIF' ? 'Aktif' : 'Nonaktif';
       document.getElementById('loginTerakhir').textContent = formatTanggalWaktuIndo(data.loginTerakhir);
 
+      // Ringkasan identitas -- diambil dari profil supaya tidak perlu
+      // menambah data baru di endpoint pengaturan.
+      try {
+        const profil = await apiGet('getProfilRelawan', { token: sesi.token });
+        document.getElementById('setIdRelawan').textContent = profil.id || '—';
+        document.getElementById('setDivisi').textContent = profil.divisi || '—';
+        document.getElementById('setUsername').textContent = profil.username || '—';
+      } catch (e) { /* bagian pelengkap -- jangan gagalkan seluruh halaman */ }
+
       main.style.display = 'block';
     } catch (err) {
       hideLoading();
@@ -50,4 +59,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   muatPengaturan();
+});
+
+
+// ---- Ukuran teks besar: disimpan di perangkat masing-masing, tidak perlu
+// data baru di server. Berguna untuk relawan yang kesulitan membaca teks kecil.
+(function () {
+  const KUNCI = 'sppg_teks_besar';
+  function terapkan(aktif) {
+    document.documentElement.style.fontSize = aktif ? '112.5%' : '';
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('toggleTeksBesar');
+    if (!toggle) return;
+    let aktif = false;
+    try { aktif = localStorage.getItem(KUNCI) === '1'; } catch (e) { /* penyimpanan tidak tersedia */ }
+    toggle.checked = aktif;
+    terapkan(aktif);
+    toggle.addEventListener('change', () => {
+      terapkan(toggle.checked);
+      try { localStorage.setItem(KUNCI, toggle.checked ? '1' : '0'); } catch (e) { /* abaikan */ }
+    });
+  });
+})();
+
+// ---- Unduh riwayat absensi periode aktif sebagai CSV
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('btnUnduhAbsensi');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const sesi = ambilSesiRelawan();
+    if (!sesi || !sesi.token) return;
+    try {
+      showLoading('Menyiapkan berkas...');
+      const hasil = await apiGet('getRiwayatAbsensiRelawan', { token: sesi.token });
+      hideLoading();
+      const baris = [['Tanggal', 'Hari', 'Jam Masuk', 'Jam Pulang', 'Status', 'Keterangan']];
+      (hasil.items || []).forEach(r => baris.push([r.tanggal, r.hari, r.jamMasuk, r.jamPulang, r.status, r.keterangan]));
+      const csv = baris.map(b => b.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'riwayat-absensi-saya.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      hideLoading();
+      showError(err.message);
+    }
+  });
 });
