@@ -176,7 +176,7 @@
         <div class="ops-panel" id="opsPanelDistribusi" style="display:none;">
           <form id="formTambahArmada" class="inline-form-relawan">
             <input type="text" id="dstKurir" placeholder="Nama kurir" required>
-            <input type="text" id="dstKendaraan" placeholder="Plat Kendaraan (mis. B 1234 ABC)">
+            <input type="text" id="dstKendaraan" placeholder="Kendaraan / plat nomor">
             <button type="submit" class="btn-outline">+ Tambah Armada</button>
           </form>
           <div id="listDistribusi"><div class="empty-state">Memuat...</div></div>
@@ -186,6 +186,11 @@
         <div class="ops-panel" id="opsPanelCuci" style="display:none;">
           <form id="formTambahCuci" class="inline-form-relawan">
             <input type="number" id="cuciJumlah" placeholder="Jumlah ompreng diterima" min="0" required>
+            <select id="cuciKondisi">
+              <option value="">Kondisi (opsional)</option>
+              <option value="Baik">Baik</option>
+              <option value="Perlu Perhatian">Perlu Perhatian</option>
+            </select>
             <button type="submit" class="btn-outline">+ Catat Penerimaan</button>
           </form>
           <div id="listCuci"><div class="empty-state">Memuat...</div></div>
@@ -194,36 +199,14 @@
     </div>
   </div>
 
-  <!-- MODAL: Aksi Tahap Distribusi/Cuci (dipakai bergantian utk semua fase) -->
-  <div class="modal-overlay is-hidden" id="modalAksiTahap">
-    <div class="modal-card" style="text-align:left;max-width:400px;">
-      <h2 id="aksiTahapJudul">Aksi</h2>
-      <form id="formAksiTahap" style="display:flex;flex-direction:column;gap:10px;">
-        <div id="aksiTahapFieldKhusus"></div>
-        <label class="sipandu-label" id="aksiTahapLabelWaktu">Waktu</label>
-        <input type="datetime-local" id="aksiTahapWaktu">
-        <label class="sipandu-label" id="aksiTahapLabelFoto">Foto (opsional)</label>
-        <input type="file" id="aksiTahapFoto" accept="image/*">
-        <div style="display:flex;gap:8px;margin-top:6px;">
-          <button type="button" class="btn-outline" id="btnBatalAksiTahap" style="flex:1;">Batal</button>
-          <button type="submit" class="btn-submit" style="flex:1;">Simpan</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  <!-- MODAL: Tambah Armada Distribusi -> Tujuan -->
   <div class="modal-overlay is-hidden" id="modalTambahTujuan">
     <div class="modal-card" style="text-align:left;max-width:400px;">
       <h2>Tambah Tujuan</h2>
       <form id="formTambahTujuan" style="display:flex;flex-direction:column;gap:10px;">
         <input type="text" id="tjnNama" placeholder="Nama tujuan (sekolah/lokasi)" required>
-        <div class="sipandu-grid5" style="grid-template-columns:1fr 1fr;">
-          <input type="number" id="tjnPorsiBesar" placeholder="Porsi Besar" min="0">
-          <input type="number" id="tjnPorsiKecil" placeholder="Porsi Kecil" min="0">
-        </div>
-        <label class="sipandu-label">Jam Kirim</label>
-        <input type="time" id="tjnJam">
-        <label class="sipandu-label">Batas Waktu Penugasan Kurir</label>
-        <input type="datetime-local" id="tjnBatasWaktu">
+        <input type="number" id="tjnJumlahPorsi" placeholder="Jumlah porsi" min="0">
+        <input type="time" id="tjnJam" placeholder="Jam">
         <textarea id="tjnCatatan" class="absensi-textarea" placeholder="Catatan (opsional)"></textarea>
         <div style="display:flex;gap:8px;">
           <button type="button" class="btn-outline" id="btnBatalTambahTujuan" style="flex:1;">Batal</button>

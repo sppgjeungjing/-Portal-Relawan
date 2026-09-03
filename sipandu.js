@@ -512,50 +512,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) { showError(err.message); }
   });
 
-  // ---- Helper foto: perkecil sebelum diunggah, sama pola dengan profil.js ----
-  function perkecilFotoOperasional_(berkas, maksSisi) {
-    return new Promise((resolve, reject) => {
-      if (!berkas) { resolve(null); return; }
-      const pembaca = new FileReader();
-      pembaca.onerror = () => reject(new Error('Gagal membaca berkas foto.'));
-      pembaca.onload = () => {
-        const img = new Image();
-        img.onerror = () => reject(new Error('Berkas yang dipilih bukan gambar yang didukung.'));
-        img.onload = () => {
-          const skala = Math.min(1, maksSisi / Math.max(img.width, img.height));
-          const c = document.createElement('canvas');
-          c.width = Math.round(img.width * skala);
-          c.height = Math.round(img.height * skala);
-          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-          resolve(c.toDataURL('image/jpeg', 0.75));
-        };
-        img.src = pembaca.result;
-      };
-      pembaca.readAsDataURL(berkas);
-    });
-  }
-
-  function keDatetimeLocal_(nilaiIso) {
-    if (!nilaiIso) return new Date().toISOString().slice(0, 16);
-    try { return new Date(nilaiIso).toISOString().slice(0, 16); } catch (e) { return new Date().toISOString().slice(0, 16); }
-  }
-
-  // ---- DISTRIBUSI (bertahap, sesuai alur POP §5.1-5.3) ----
-  const LABEL_STATUS_STOP = {
-    DITUGASKAN: 'Ditugaskan', BERANGKAT: 'Dalam Perjalanan (Kirim)', DITERIMA: 'Diterima di Tujuan',
-    PENGAMBILAN_DIJADWALKAN: 'Pengambilan Dijadwalkan', PENGAMBILAN_BERANGKAT: 'Dalam Perjalanan (Ambil)', SELESAI: 'Selesai'
-  };
-  // Setiap status -> tombol aksi berikutnya (aksi = nama endpoint API)
-  const AKSI_BERIKUTNYA_STOP = {
-    DITUGASKAN: { label: '🚚 Kurir Berangkat', aksi: 'catatPengirimanBerangkat', judul: 'Kurir Berangkat', foto: 'fotoSebelumKirim', waktu: 'waktuBerangkat' },
-    BERANGKAT: { label: '📍 Sampai di Tujuan', aksi: 'catatPengirimanSampai', judul: 'Konfirmasi Sampai di Tujuan', foto: 'fotoDiterima', waktu: 'waktuDiterima' },
-    DITERIMA: { label: '📅 Jadwalkan Pengambilan', aksi: 'jadwalkanPengambilan', judul: 'Jadwalkan Pengambilan Ompreng', khusus: true },
-    PENGAMBILAN_DIJADWALKAN: { label: '🚚 Kurir Pengambil Berangkat', aksi: 'catatPengambilanBerangkat', judul: 'Kurir Pengambil Berangkat', foto: 'fotoSaatAmbil', waktu: 'waktuBerangkatAmbil' },
-    PENGAMBILAN_BERANGKAT: { label: '✅ Ompreng Kembali di SPPG', aksi: 'catatOmprengKembali', judul: 'Konfirmasi Ompreng Kembali', foto: 'fotoSaatKembali', waktu: 'waktuKembali' }
-  };
-
-  let aksiTahapAktif = null; // { aksi, idStop }
-
+  // ---- DISTRIBUSI ----
   async function muatDistribusi() {
     const wrap = document.getElementById('listDistribusi');
     wrap.innerHTML = '<div class="empty-state">Memuat...</div>';
@@ -563,14 +520,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const list = await sipanduApiGet('getDistributionList', { token, idWo: idWoOperasionalAktif });
       wrap.innerHTML = !list.length ? '<div class="empty-state">Belum ada armada ditugaskan.</div>' : list.map(r => `
         <div class="sipandu-wo-card" style="cursor:default;">
-          <div class="sipandu-wo-card-top"><strong>${escapeHtml(r.namaKurir)}</strong><span>${escapeHtml(r.platKendaraan || '-')}</span></div>
-          ${r.tujuan.map(t => `
-            <div style="border-top:1px solid var(--color-border);padding:8px 0;">
-              <p style="margin:0 0 4px;">📍 <strong>${escapeHtml(t.namaTujuan)}</strong> — Besar: ${t.jumlahPorsiBesar}, Kecil: ${t.jumlahPorsiKecil} ${t.jam ? '· ' + escapeHtml(t.jam) : ''}</p>
-              <span class="sipandu-status-badge status-ready">${escapeHtml(LABEL_STATUS_STOP[t.status] || t.status)}</span>
-              ${AKSI_BERIKUTNYA_STOP[t.status] ? `<button type="button" class="btn-outline btn-aksi-stop" data-id="${escapeHtml(t.id)}" data-status="${escapeHtml(t.status)}" style="display:block;width:100%;margin-top:6px;">${AKSI_BERIKUTNYA_STOP[t.status].label}</button>` : ''}
-            </div>`).join('')}
-          <button type="button" class="btn-outline btn-tambah-tujuan" data-id="${escapeHtml(r.id)}" style="margin-top:8px;">+ Tambah Tujuan</button>
+          <div class="sipandu-wo-card-top"><strong>${escapeHtml(r.namaKurir)}</strong><span>${escapeHtml(r.kendaraan || '-')}</span></div>
+          ${r.tujuan.map(t => `<p>📍 ${escapeHtml(t.namaTujuan)} — ${t.jumlahPorsi} porsi ${t.jam ? '(' + escapeHtml(t.jam) + ')' : ''} · <em>${escapeHtml(t.status)}</em></p>`).join('')}
+          <button type="button" class="btn-outline btn-tambah-tujuan" data-id="${escapeHtml(r.id)}" style="margin-top:6px;">+ Tambah Tujuan</button>
         </div>`).join('');
 
       wrap.querySelectorAll('.btn-tambah-tujuan').forEach(btn => {
@@ -579,10 +531,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           document.getElementById('formTambahTujuan').reset();
           document.getElementById('modalTambahTujuan').classList.remove('is-hidden');
         });
-      });
-
-      wrap.querySelectorAll('.btn-aksi-stop').forEach(btn => {
-        btn.addEventListener('click', () => bukaModalAksiTahap_(btn.dataset.id, btn.dataset.status));
       });
     } catch (err) { wrap.innerHTML = ''; showError(err.message); }
   }
@@ -593,7 +541,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await sipanduApiPost('addDistributionRoute', {
         token, idWo: idWoOperasionalAktif,
         namaKurir: document.getElementById('dstKurir').value.trim(),
-        platKendaraan: document.getElementById('dstKendaraan').value.trim()
+        kendaraan: document.getElementById('dstKendaraan').value.trim()
       });
       e.target.reset();
       showSuccess('Armada ditambahkan.');
@@ -611,10 +559,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       await sipanduApiPost('addDistributionStop', {
         token, idDistribution: idDistribusiTujuanAktif,
         namaTujuan: document.getElementById('tjnNama').value.trim(),
-        jumlahPorsiBesar: Number(document.getElementById('tjnPorsiBesar').value || 0),
-        jumlahPorsiKecil: Number(document.getElementById('tjnPorsiKecil').value || 0),
+        jumlahPorsi: Number(document.getElementById('tjnJumlahPorsi').value || 0),
         jam: document.getElementById('tjnJam').value,
-        batasWaktu: document.getElementById('tjnBatasWaktu').value,
         catatan: document.getElementById('tjnCatatan').value.trim()
       });
       document.getElementById('modalTambahTujuan').classList.add('is-hidden');
@@ -623,119 +569,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) { showError(err.message); }
   });
 
-  // ---- Modal Aksi Tahap (dipakai bersama Distribusi tahap-lanjut & Cuci) ----
-  function bukaModalAksiTahap_(idStop, status) {
-    const konfig = AKSI_BERIKUTNYA_STOP[status];
-    aksiTahapAktif = { aksi: konfig.aksi, id: idStop, khusus: !!konfig.khusus, sumber: 'distribusi' };
-
-    document.getElementById('aksiTahapJudul').textContent = konfig.judul;
-    document.getElementById('formAksiTahap').reset();
-    document.getElementById('aksiTahapWaktu').value = keDatetimeLocal_();
-
-    const wrapKhusus = document.getElementById('aksiTahapFieldKhusus');
-    if (konfig.khusus) {
-      // Fase "Jadwalkan Pengambilan" butuh field tambahan (§5.3.2 POP)
-      wrapKhusus.innerHTML = `
-        <input type="number" id="aksiJumlahOmprengAmbil" placeholder="Jumlah ompreng diambil" min="0">
-        <input type="text" id="aksiNamaKurirAmbil" placeholder="Nama kurir pengambil" style="margin-top:8px;">
-        <input type="text" id="aksiPlatKurirAmbil" placeholder="Plat kendaraan pengambil" style="margin-top:8px;">`;
-      document.getElementById('aksiTahapLabelWaktu').textContent = 'Waktu Dijadwalkan Pengambilan';
-      document.getElementById('aksiTahapFoto').closest('form').querySelector('#aksiTahapLabelFoto').style.display = 'none';
-      document.getElementById('aksiTahapFoto').style.display = 'none';
-    } else {
-      wrapKhusus.innerHTML = '';
-      document.getElementById('aksiTahapLabelWaktu').textContent = 'Waktu';
-      document.getElementById('aksiTahapLabelFoto').style.display = 'block';
-      document.getElementById('aksiTahapFoto').style.display = 'block';
-    }
-
-    document.getElementById('modalAksiTahap').classList.remove('is-hidden');
-  }
-
-  document.getElementById('btnBatalAksiTahap').addEventListener('click', () => {
-    document.getElementById('modalAksiTahap').classList.add('is-hidden');
-  });
-
-  document.getElementById('formAksiTahap').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!aksiTahapAktif) return;
-    try {
-      showLoading('Menyimpan...');
-      const payload = { token, id: aksiTahapAktif.id };
-
-      if (aksiTahapAktif.khusus) {
-        payload.jumlahOmprengAmbil = Number(document.getElementById('aksiJumlahOmprengAmbil').value || 0);
-        payload.namaKurirAmbil = document.getElementById('aksiNamaKurirAmbil').value.trim();
-        payload.platKurirAmbil = document.getElementById('aksiPlatKurirAmbil').value.trim();
-        payload.waktuDijadwalkanAmbil = document.getElementById('aksiTahapWaktu').value;
-      } else {
-        const konfigWaktuKey = aksiTahapAktif.sumber === 'cuci'
-          ? { mulaiPencucian: 'waktuMulai', selesaikanPencucian: 'waktuSelesai' }[aksiTahapAktif.aksi]
-          : { catatPengirimanBerangkat: 'waktuBerangkat', catatPengirimanSampai: 'waktuDiterima', catatPengambilanBerangkat: 'waktuBerangkatAmbil', catatOmprengKembali: 'waktuKembali' }[aksiTahapAktif.aksi];
-        payload[konfigWaktuKey] = document.getElementById('aksiTahapWaktu').value;
-
-        if (aksiTahapAktif.sumber === 'cuci' && aksiTahapAktif.aksi === 'selesaikanPencucian') {
-          payload.jumlahDicuci = Number(document.getElementById('aksiJumlahDicuci').value || 0);
-        }
-
-        const berkas = document.getElementById('aksiTahapFoto').files[0];
-        if (berkas) {
-          const fotoKey = { catatPengirimanBerangkat: 'fotoSebelumKirim', catatPengirimanSampai: 'fotoDiterima', catatPengambilanBerangkat: 'fotoSaatAmbil', catatOmprengKembali: 'fotoSaatKembali' }[aksiTahapAktif.aksi];
-          if (fotoKey) payload[fotoKey] = await perkecilFotoOperasional_(berkas, 720);
-        }
-      }
-
-      await sipanduApiPost(aksiTahapAktif.aksi, payload);
-      hideLoading();
-      document.getElementById('modalAksiTahap').classList.add('is-hidden');
-      showSuccess('Tersimpan.');
-      if (aksiTahapAktif.sumber === 'cuci') muatCuci(); else muatDistribusi();
-    } catch (err) {
-      hideLoading();
-      showError(err.message);
-    }
-  });
-
-  // ---- CUCI OMPRENG (bertahap, sesuai alur POP §6.1) ----
-  const LABEL_STATUS_CUCI = { BELUM_DICUCI: 'Belum Dicuci', SEDANG_DICUCI: 'Sedang Dicuci', SELESAI_DICUCI: 'Selesai Dicuci' };
-
+  // ---- CUCI OMPRENG ----
   async function muatCuci() {
     const wrap = document.getElementById('listCuci');
     wrap.innerHTML = '<div class="empty-state">Memuat...</div>';
     try {
       const list = await sipanduApiGet('getWashingList', { token, idWo: idWoOperasionalAktif });
       wrap.innerHTML = !list.length ? '<div class="empty-state">Belum ada catatan pencucian.</div>' : list.map(w => `
-        <div class="sipandu-wo-card" style="cursor:default;" data-id="${escapeHtml(w.id)}">
-          <div class="sipandu-wo-card-top"><strong>${w.jumlahDiterima} ompreng diterima</strong><span class="sipandu-status-badge status-ready">${escapeHtml(LABEL_STATUS_CUCI[w.status] || w.status)}</span></div>
-          <p>${w.waktuMulaiCuci ? 'Mulai: ' + escapeHtml(w.waktuMulaiCuci) : ''} ${w.waktuSelesaiCuci ? '· Selesai: ' + escapeHtml(w.waktuSelesaiCuci) + ' (' + w.jumlahDicuci + ' dicuci)' : ''}</p>
-          ${w.status === 'BELUM_DICUCI' ? `<button type="button" class="btn-outline btn-mulai-cuci" data-id="${escapeHtml(w.id)}" style="width:100%;">🧼 Mulai Pencucian</button>` : ''}
-          ${w.status === 'SEDANG_DICUCI' ? `<button type="button" class="btn-outline btn-selesai-cuci" data-id="${escapeHtml(w.id)}" style="width:100%;">✅ Catat Selesai Pencucian</button>` : ''}
+        <div class="sipandu-wo-card" style="cursor:default;">
+          <div class="sipandu-wo-card-top"><strong>${w.jumlahOmpreng} ompreng</strong><span>${escapeHtml(w.kondisi || '-')}</span></div>
+          <p>Diterima: ${escapeHtml(w.jamPengambilan || '-')} · Dikembalikan: ${escapeHtml(w.jamDikembalikan || 'belum')}</p>
         </div>`).join('');
-
-      wrap.querySelectorAll('.btn-mulai-cuci').forEach(btn => {
-        btn.addEventListener('click', () => bukaModalAksiCuci_(btn.dataset.id, 'mulaiPencucian', 'Mulai Pencucian'));
-      });
-      wrap.querySelectorAll('.btn-selesai-cuci').forEach(btn => {
-        btn.addEventListener('click', () => bukaModalAksiCuci_(btn.dataset.id, 'selesaikanPencucian', 'Catat Pencucian Selesai'));
-      });
     } catch (err) { wrap.innerHTML = ''; showError(err.message); }
-  }
-
-  function bukaModalAksiCuci_(idWashing, aksi, judul) {
-    aksiTahapAktif = { aksi: aksi, id: idWashing, khusus: false, sumber: 'cuci' };
-    document.getElementById('aksiTahapJudul').textContent = judul;
-    document.getElementById('formAksiTahap').reset();
-    document.getElementById('aksiTahapWaktu').value = keDatetimeLocal_();
-    document.getElementById('aksiTahapLabelWaktu').textContent = aksi === 'mulaiPencucian' ? 'Waktu Mulai Cuci' : 'Waktu Selesai Cuci';
-    document.getElementById('aksiTahapLabelFoto').style.display = 'none';
-    document.getElementById('aksiTahapFoto').style.display = 'none';
-
-    const wrapKhusus = document.getElementById('aksiTahapFieldKhusus');
-    wrapKhusus.innerHTML = aksi === 'selesaikanPencucian'
-      ? `<input type="number" id="aksiJumlahDicuci" placeholder="Jumlah ompreng dicuci" min="0">`
-      : '';
-
-    document.getElementById('modalAksiTahap').classList.remove('is-hidden');
   }
 
   document.getElementById('formTambahCuci').addEventListener('submit', async (e) => {
@@ -743,8 +588,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await sipanduApiPost('addWashingRecord', {
         token, idWo: idWoOperasionalAktif,
-        jumlahDiterima: Number(document.getElementById('cuciJumlah').value || 0),
-        catatan: ''
+        jumlahOmpreng: Number(document.getElementById('cuciJumlah').value || 0),
+        kondisi: document.getElementById('cuciKondisi').value
       });
       e.target.reset();
       showSuccess('Penerimaan ompreng dicatat.');
