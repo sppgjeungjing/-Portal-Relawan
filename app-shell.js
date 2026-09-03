@@ -113,12 +113,28 @@ async function bootRelawanShell() {
     });
   }
 
+  // Permintaan getProfilRelawan disimpan sebagai PROMISE BERSAMA (bukan
+  // langsung di-await) supaya halaman lain (dashboard.js) yang butuh data
+  // sama bisa menunggu promise ini alih-alih mengirim request kedua yang
+  // identik ke server -- ini salah satu penyebab dashboard terasa lambat.
+  window.sppgProfilPromise = apiGet('getProfilRelawan', { token: sesi.token });
+
   try {
-    const profil = await apiGet('getProfilRelawan', { token: sesi.token });
+    const profil = await window.sppgProfilPromise;
     const inisial = initialsFromName(profil.nama);
     const isAktif = (profil.status || 'Aktif').toLowerCase().indexOf('nonaktif') === -1;
 
-    document.querySelectorAll('#topbarAvatar, #sidebarAvatar, #profilAvatar').forEach(el => { el.textContent = inisial; });
+    // Sebelumnya avatar SELALU ditulis sebagai inisial teks, walau foto
+    // profil sudah ada (fotoProfilUrl dari getProfilRelawan tidak pernah
+    // dicek di sini) -- itu sebabnya foto muncul di halaman Profil (yang
+    // membacanya sendiri) tapi tidak pernah muncul di header/sidebar.
+    document.querySelectorAll('#topbarAvatar, #sidebarAvatar, #profilAvatar').forEach(el => {
+      if (profil.fotoProfilUrl) {
+        el.innerHTML = `<img src="${profil.fotoProfilUrl}" alt="Foto profil" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+      } else {
+        el.textContent = inisial;
+      }
+    });
     const namaEl = document.getElementById('sidebarNama');
     if (namaEl) namaEl.textContent = profil.nama;
     const statusEl = document.getElementById('sidebarStatus');
@@ -172,3 +188,11 @@ function markAllNotifRead(idRelawan, ids) {
   ids.forEach(id => set.add(id));
   try { localStorage.setItem(notifReadKey(idRelawan), JSON.stringify(Array.from(set))); } catch (e) { /* abaikan */ }
 }
+
+// Dipicu di sini (bukan lewat <script> inline per halaman) supaya SELALU
+// berjalan LEBIH DULU daripada dashboard.js/profil.js dkk -- app-shell.js
+// dimuat lebih awal di <head>/<body>, jadi listener DOMContentLoaded-nya
+// pasti terdaftar lebih dulu. Ini yang membuat window.sppgProfilPromise
+// (lihat bootRelawanShell) benar-benar bisa dipakai bersama, bukan cuma
+// tertulis di kode tapi tidak pernah kejadian tepat waktu.
+document.addEventListener('DOMContentLoaded', bootRelawanShell);

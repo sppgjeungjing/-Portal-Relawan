@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!cacheBarang.length) { el.stokDaftarBarang.innerHTML = '<div class="empty-state">Belum ada barang terdaftar.</div>'; return; }
       el.stokDaftarBarang.innerHTML = cacheBarang.map(b => `
         <div class="stok-perhatian-row">
-          <div><p>${escapeHtml(b.nama)}</p><small>${escapeHtml(b.namaKategori)} · Stok: ${b.stok} ${escapeHtml(b.satuan)}</small></div>
+          <div><p><strong>${escapeHtml(b.kode || '-')}</strong> — ${escapeHtml(b.nama)}</p><small>${escapeHtml(b.namaKategori)} · Stok: ${b.stok} ${escapeHtml(b.satuan)}</small></div>
           <span class="stok-badge stok-badge-${b.status.toLowerCase()}">${b.status === 'AMAN' ? '🟢' : b.status === 'MENIPIS' ? '🟡' : '🔴'} ${b.status}</span>
         </div>`).join('');
     } catch (err) {
@@ -126,8 +126,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  function opsiBarang_() {
-    const opsi = cacheBarang.map(b => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.nama)} (stok: ${b.stok} ${escapeHtml(b.satuan)})</option>`).join('');
+  function opsiBarang_(daftar) {
+    const sumber = daftar || cacheBarang;
+    const opsi = sumber.map(b => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.kode ? b.kode + ' — ' : '')}${escapeHtml(b.nama)} (stok: ${b.stok} ${escapeHtml(b.satuan)})</option>`).join('');
     return '<option value="">Pilih barang...</option>' + opsi;
   }
 
@@ -135,10 +136,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     const baris = document.createElement('div');
     baris.className = 'stok-item-row';
     baris.innerHTML = `
+      <input type="text" class="stok-item-cari" placeholder="🔍 Cari ID/nama barang..." autocomplete="off">
       <select class="stok-item-barang">${opsiBarang_()}</select>
       <input type="number" class="stok-item-jumlah" placeholder="Jumlah" min="0.01" step="0.01">
       <button type="button" title="Hapus baris">🗑</button>`;
     baris.querySelector('button').addEventListener('click', () => baris.remove());
+
+    const inputCari = baris.querySelector('.stok-item-cari');
+    const select = baris.querySelector('.stok-item-barang');
+    inputCari.addEventListener('input', () => {
+      const kata = inputCari.value.trim().toLowerCase();
+      const nilaiSebelumnya = select.value;
+      const hasil = !kata ? cacheBarang : cacheBarang.filter(b =>
+        String(b.id).toLowerCase().includes(kata) ||
+        String(b.nama).toLowerCase().includes(kata) ||
+        String(b.kode || '').toLowerCase().includes(kata)
+      );
+      select.innerHTML = opsiBarang_(hasil);
+      if (hasil.some(b => b.id === nilaiSebelumnya)) select.value = nilaiSebelumnya;
+    });
+
     container.appendChild(baris);
   }
 

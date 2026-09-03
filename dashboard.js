@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     showLoading('Memuat dashboard...');
     const [profil, riwayat, notifikasi, informasi] = await Promise.all([
-      apiGet('getProfilRelawan', { token: sesi.token }),
+      window.sppgProfilPromise || apiGet('getProfilRelawan', { token: sesi.token }),
       apiGet('getRiwayatAbsensiRelawan', { token: sesi.token }).catch(() => ({ periode: null, items: [] })),
       apiGet('getNotifikasiRelawan', { token: sesi.token }).catch(() => []),
       apiGet('getInformasiRelawan', { token: sesi.token }).catch(() => [])
